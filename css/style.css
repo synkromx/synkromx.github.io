@@ -653,3 +653,16 @@ ul { list-style: none; }
   background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.4);
   color: var(--gold); transform: translateY(-2px);
 }
+
+/* Nichos as clickable links */
+.nichos-grid a.nicho {
+  text-decoration: none;
+  cursor: pointer;
+}
+.nichos-grid a.nicho:hover {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(201,168,76,0.12);
+  color: var(--ink);
+}
