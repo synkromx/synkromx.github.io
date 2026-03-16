@@ -666,3 +666,10 @@ ul { list-style: none; }
   box-shadow: 0 10px 30px rgba(201,168,76,0.12);
   color: var(--ink);
 }
+
+/* Fix CTA button alignment */
+.cta-actions .btn-gold,
+.cta-actions .btn-outline {
+  min-width: 280px;
+  justify-content: center;
+}
