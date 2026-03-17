@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnóstico Gratuito — SYNKRO</title>
+  <meta name="description" content="Estás a un paso de tener más clientes — y cuesta menos de lo que imaginas. Solicita tu diagnóstico gratuito con SYNKRO.">
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold:    #C9A84C;
+      --gold-dim: rgba(201,168,76,0.12);
+      --gold-border: rgba(201,168,76,0.22);
+      --cobalt:  #0A2463;
+      --dark:    #07101f;
+      --dark-2:  #0c1a31;
+      --bg:      #faf9f6;
+      --white:   #ffffff;
+      --ink:     #0d0d14;
+      --muted:   #6b6b80;
+      --border:  rgba(0,0,0,0.08);
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans:  'Outfit', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-sans); background: var(--dark); color: var(--white); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    /* NAV */
+    .nav {
+      padding: 1.2rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(201,168,76,0.1);
+    }
+    .nav-logo { height: 36px; object-fit: contain; }
+    .nav-back {
+      font-size: 0.72rem; color: rgba(255,255,255,0.3);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none; transition: color 0.2s;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .nav-back:hover { color: var(--gold); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem 3rem;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+    .hero-eyebrow {
+      font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 1.2rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    }
+    .hero-eyebrow span { display: block; width: 18px; height: 1px; background: var(--gold); }
+    .hero-h1 {
+      font-family: var(--font-serif); font-weight: 700;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 1.1; letter-spacing: -0.02em;
+      margin-bottom: 1rem; position: relative;
+    }
+    .hero-h1 em { color: var(--gold); font-style: normal; }
+    .hero-sub {
+      font-size: 1rem; font-weight: 300;
+      color: rgba(255,255,255,0.45); line-height: 1.8;
+      max-width: 520px; margin: 0 auto 1.5rem;
+      position: relative;
+    }
+    .hero-sub strong { color: rgba(255,255,255,0.8); font-weight: 500; }
+    .hero-trust {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      justify-content: center; margin-bottom: 0;
+      position: relative;
+    }
+    .trust-item {
+      font-size: 0.72rem; color: rgba(255,255,255,0.3);
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .trust-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+    /* FORM CARD */
+    .form-wrap {
+      max-width: 600px; margin: 2.5rem auto 0;
+      padding: 0 1.5rem 4rem;
+    }
+    .form-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      backdrop-filter: blur(10px);
+    }
+
+    /* NICHO SELECTOR */
+    .field-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .field-label::before { content: ''; width: 14px; height: 1px; background: var(--gold); display: block; }
+    .nichos-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem; margin-bottom: 2rem;
+    }
+    .nicho-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 0.8rem 0.4rem;
+      cursor: pointer; text-align: center;
+      font-family: var(--font-sans);
+      transition: all 0.2s;
+    }
+    .nicho-btn:hover { border-color: rgba(201,168,76,0.4); background: var(--gold-dim); }
+    .nicho-btn.active {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+      box-shadow: 0 0 0 1px rgba(201,168,76,0.3);
+    }
+    .nicho-icon { font-size: 1.4rem; display: block; margin-bottom: 0.3rem; }
+    .nicho-name { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.7); line-height: 1.2; }
+    .nicho-btn.active .nicho-name { color: var(--gold); }
+
+    /* FORM FIELDS */
+    .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .field.full { grid-column: 1 / -1; }
+    .field-lbl {
+      font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5);
+      letter-spacing: 0.04em;
+    }
+    .field-input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 0.75rem 1rem;
+      font-family: var(--font-sans); font-size: 0.9rem;
+      color: var(--white); outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-input::placeholder { color: rgba(255,255,255,0.2); }
+    .field-input:focus { border-color: var(--gold); }
+    .field-select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 0.75rem 1rem;
+      font-family: var(--font-sans); font-size: 0.9rem;
+      color: var(--white); outline: none; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .field-select:focus { border-color: var(--gold); }
+    .field-select option { background: var(--dark-2); color: var(--white); }
+
+    /* REDES CHECKBOXES */
+    .redes-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem; margin-bottom: 1.5rem;
+    }
+    .red-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 0.7rem 0.4rem;
+      cursor: pointer; text-align: center;
+      font-family: var(--font-sans); transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    }
+    .red-btn:hover { border-color: rgba(201,168,76,0.4); }
+    .red-btn.active { border-color: var(--gold); background: var(--gold-dim); }
+    .red-icon { font-size: 1.3rem; }
+    .red-name { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.5); }
+    .red-btn.active .red-name { color: var(--gold); }
+
+    /* DIVIDER */
+    .form-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent);
+      margin: 1.5rem 0;
+    }
+
+    /* SUBMIT */
+    .btn-submit {
+      width: 100%; padding: 1rem;
+      background: var(--gold); color: #fff;
+      font-family: var(--font-sans); font-size: 0.9rem;
+      font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      border: none; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn-submit:hover { background: var(--cobalt); transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+    .form-note {
+      text-align: center; font-size: 0.72rem;
+      color: rgba(255,255,255,0.2); margin-top: 0.8rem; line-height: 1.6;
+    }
+
+    /* SUCCESS STATE */
+    .success-state {
+      display: none; text-align: center; padding: 2rem 0;
+    }
+    .success-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .success-h { font-family: var(--font-serif); font-weight: 700; font-size: 2rem; color: var(--gold); margin-bottom: 0.5rem; }
+    .success-p { font-size: 0.9rem; color: rgba(255,255,255,0.45); line-height: 1.7; }
+
+    /* FOOTER */
+    .footer {
+      text-align: center; padding: 1.5rem 2rem;
+      border-top: 1px solid rgba(201,168,76,0.08);
+    }
+    .footer p { font-size: 0.7rem; color: rgba(255,255,255,0.2); }
+    .footer a { color: rgba(255,255,255,0.3); text-decoration: none; }
+    .footer a:hover { color: var(--gold); }
+
+    /* WA BUBBLE */
+    .wa-bubble {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
+      width: 54px; height: 54px; border-radius: 50%;
+      background: #25D366; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 24px rgba(37,211,102,0.5);
+      text-decoration: none; transition: transform 0.2s;
+    }
+    .wa-bubble:hover { transform: scale(1.1); }
+
+    /* RESPONSIVE */
+    @media (max-width: 560px) {
+      .nichos-grid { grid-template-columns: repeat(3, 1fr); }
+      .fields-grid { grid-template-columns: 1fr; }
+      .redes-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-h1 { font-size: 2rem; }
+      .form-card { padding: 1.8rem 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <img src="assets/logo-horizontal.png" alt="SYNKRO" class="nav-logo" onerror="this.style.display='none'">
+    <a href="index.html" class="nav-back">← Regresar al sitio</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="hero-eyebrow"><span></span>Diagnóstico gratuito<span></span></p>
+    <h1 class="hero-h1">
+      Estás a un paso de tener<br>
+      <em>más clientes</em> — y cuesta menos<br>
+      de lo que imaginas.
+    </h1>
+    <p class="hero-sub">
+      Cuéntanos sobre tu negocio y en menos de <strong>24 horas</strong> te decimos exactamente cómo podemos traerte más clientes — sin tecnicismos, sin compromisos.
+    </p>
+    <div class="hero-trust">
+      <span class="trust-item"><span class="trust-dot"></span>Sin costo</span>
+      <span class="trust-item"><span class="trust-dot"></span>Sin compromiso</span>
+      <span class="trust-item"><span class="trust-dot"></span>Respuesta el mismo día</span>
+      <span class="trust-item"><span class="trust-dot"></span>Flexibilidad para contratar</span>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-wrap">
+    <div class="form-card">
+
+      <!-- NICHO -->
+      <div class="field-label">01 · Selecciona tu tipo de negocio</div>
+      <div class="nichos-grid" id="nichosGrid">
+        <button class="nicho-btn" data-nicho="Consultorio Dental" onclick="selectNicho(this)"><span class="nicho-icon">🦷</span><span class="nicho-name">Dentista</span></button>
+        <button class="nicho-btn" data-nicho="Psicólogo" onclick="selectNicho(this)"><span class="nicho-icon">🧠</span><span class="nicho-name">Psicólogo</span></button>
+        <button class="nicho-btn" data-nicho="Fisioterapeuta" onclick="selectNicho(this)"><span class="nicho-icon">💪</span><span class="nicho-name">Fisioterapia</span></button>
+        <button class="nicho-btn" data-nicho="Abogado" onclick="selectNicho(this)"><span class="nicho-icon">⚖️</span><span class="nicho-name">Abogado</span></button>
+        <button class="nicho-btn" data-nicho="Restaurante" onclick="selectNicho(this)"><span class="nicho-icon">🍽️</span><span class="nicho-name">Restaurante</span></button>
+        <button class="nicho-btn" data-nicho="Escuela" onclick="selectNicho(this)"><span class="nicho-icon">🎒</span><span class="nicho-name">Escuela</span></button>
+        <button class="nicho-btn" data-nicho="Guardería" onclick="selectNicho(this)"><span class="nicho-icon">🧒</span><span class="nicho-name">Guardería</span></button>
+        <button class="nicho-btn" data-nicho="Nutriólogo" onclick="selectNicho(this)"><span class="nicho-icon">🥗</span><span class="nicho-name">Nutriólogo</span></button>
+        <button class="nicho-btn" data-nicho="Salón de Belleza" onclick="selectNicho(this)"><span class="nicho-icon">✂️</span><span class="nicho-name">Belleza</span></button>
+        <button class="nicho-btn" data-nicho="Veterinaria" onclick="selectNicho(this)"><span class="nicho-icon">🐾</span><span class="nicho-name">Veterinaria</span></button>
+        <button class="nicho-btn" data-nicho="Gimnasio" onclick="selectNicho(this)"><span class="nicho-icon">🏋️</span><span class="nicho-name">Gimnasio</span></button>
+        <button class="nicho-btn" data-nicho="Otro negocio" onclick="selectNicho(this)"><span class="nicho-icon">🏢</span><span class="nicho-name">Otro</span></button>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <!-- DATOS -->
+      <div class="field-label">02 · Tus datos de contacto</div>
+      <div class="fields-grid">
+        <div class="field">
+          <label class="field-lbl">Nombre</label>
+          <input type="text" class="field-input" id="nombre" placeholder="Tu nombre">
+        </div>
+        <div class="field">
+          <label class="field-lbl">WhatsApp</label>
+          <input type="tel" class="field-input" id="telefono" placeholder="222 000 0000">
+        </div>
+        <div class="field full">
+          <label class="field-lbl">Nombre de tu negocio</label>
+          <input type="text" class="field-input" id="negocio" placeholder="¿Cómo se llama tu negocio?">
+        </div>
+        <div class="field full">
+          <label class="field-lbl">¿Cuántos clientes nuevos quieres atraer al mes?</label>
+          <select class="field-select" id="clientes">
+            <option value="">— Selecciona —</option>
+            <option value="1 a 5 clientes nuevos">1 a 5 clientes nuevos</option>
+            <option value="5 a 15 clientes nuevos">5 a 15 clientes nuevos</option>
+            <option value="Más de 15 clientes nuevos">Más de 15 clientes nuevos</option>
+            <option value="No lo sé todavía">No lo sé todavía</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <!-- REDES -->
+      <div class="field-label">03 · ¿Qué redes sociales usas actualmente?</div>
+      <div class="redes-grid">
+        <button class="red-btn" data-red="Facebook" onclick="toggleRed(this)"><span class="red-icon">📘</span><span class="red-name">Facebook</span></button>
+        <button class="red-btn" data-red="Instagram" onclick="toggleRed(this)"><span class="red-icon">📸</span><span class="red-name">Instagram</span></button>
+        <button class="red-btn" data-red="TikTok" onclick="toggleRed(this)"><span class="red-icon">🎵</span><span class="red-name">TikTok</span></button>
+        <button class="red-btn" data-red="Ninguna" onclick="toggleRed(this)"><span class="red-icon">🚫</span><span class="red-name">Ninguna</span></button>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <!-- SUBMIT -->
+      <button class="btn-submit" onclick="enviar()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.196.591 4.247 1.618 6.005L.057 23.48c-.073.274.179.523.451.445l5.616-1.536A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.522-5.185-1.43l-.371-.221-3.844 1.048 1.081-3.739-.242-.384A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Quiero mi diagnóstico gratuito
+      </button>
+      <p class="form-note">Al enviar este formulario serás redirigido a WhatsApp con tu información prellenada.<br>Sin spam, sin llamadas no solicitadas.</p>
+
+      <!-- SUCCESS -->
+      <div class="success-state" id="successState">
+        <div class="success-icon">✅</div>
+        <h3 class="success-h">¡Listo, te esperamos!</h3>
+        <p class="success-p">Abrimos WhatsApp con tu información.<br>Te respondemos el mismo día.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>© 2025 SYNKRO Tech · <a href="index.html">synkro.mx</a> · <a href="privacidad.html">Privacidad</a> · <a href="datos.html">Eliminar mis datos</a></p>
+  </footer>
+
+  <!-- WA BUBBLE -->
+  <a href="https://wa.me/522224554234?text=Hola%20SYNKRO%2C%20quiero%20información" target="_blank" class="wa-bubble" aria-label="WhatsApp">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.196.591 4.247 1.618 6.005L.057 23.48c-.073.274.179.523.451.445l5.616-1.536A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.522-5.185-1.43l-.371-.221-3.844 1.048 1.081-3.739-.242-.384A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+  </a>
+
+  <script>
+    const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwTPvwyHSoFtRGsigyU_TSuE9QCnvZXh-yV9A6gL4Ybm20Kb1V0DQHu2KulWkVksmRy/exec';
+    let selectedNicho = '';
+    let selectedRedes = [];
+
+    // Pre-select nicho from URL param
+    const params = new URLSearchParams(window.location.search);
+    const nichoParam = params.get('nicho');
+    if (nichoParam) {
+      const btns = document.querySelectorAll('.nicho-btn');
+      btns.forEach(btn => {
+        if (btn.dataset.nicho.toLowerCase().includes(nichoParam.toLowerCase())) {
+          selectNicho(btn);
+        }
+      });
+    }
+
+    function selectNicho(btn) {
+      document.querySelectorAll('.nicho-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedNicho = btn.dataset.nicho;
+    }
+
+    function toggleRed(btn) {
+      const red = btn.dataset.red;
+      if (red === 'Ninguna') {
+        document.querySelectorAll('.red-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRedes = ['Ninguna'];
+        return;
+      }
+      // Remove Ninguna if selecting a real network
+      document.querySelectorAll('.red-btn[data-red="Ninguna"]').forEach(b => b.classList.remove('active'));
+      selectedRedes = selectedRedes.filter(r => r !== 'Ninguna');
+
+      btn.classList.toggle('active');
+      if (btn.classList.contains('active')) {
+        selectedRedes.push(red);
+      } else {
+        selectedRedes = selectedRedes.filter(r => r !== red);
+      }
+    }
+
+    async function enviar() {
+      const nombre   = document.getElementById('nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const negocio  = document.getElementById('negocio').value.trim();
+      const clientes = document.getElementById('clientes').value;
+
+      if (!nombre || !telefono || !selectedNicho) {
+        alert('Por favor completa tu nombre, WhatsApp y tipo de negocio.');
+        return;
+      }
+
+      const redes = selectedRedes.length > 0 ? selectedRedes.join(', ') : 'No especificó';
+
+      // Guardar en Google Sheets
+      try {
+        await fetch(SHEETS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, telefono, negocio, nicho: selectedNicho, clientes: clientes || 'No especificó', redes })
+        });
+      } catch(err) {
+        console.log('Sheet save error:', err);
+      }
+
+      // Abrir WhatsApp con datos prellenados
+      const msg = `Hola SYNKRO, quiero mi diagnóstico gratuito 🙌
+
+📌 Negocio: ${negocio || 'No especificado'}
+🏷️ Giro: ${selectedNicho}
+👤 Nombre: ${nombre}
+📱 WhatsApp: ${telefono}
+🎯 Clientes nuevos/mes: ${clientes || 'No especificó'}
+📲 Redes actuales: ${redes}`;
+
+      const waURL = `https://wa.me/522224554234?text=${encodeURIComponent(msg)}`;
+      window.open(waURL, '_blank');
+    }
+  </script>
+</body>
+</html>
