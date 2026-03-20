@@ -673,3 +673,83 @@ ul { list-style: none; }
   min-width: 280px;
   justify-content: center;
 }
+
+/* ============================================================
+   PACKAGE COLLAGE — Visual tiles
+   ============================================================ */
+
+/* Header row with level bars */
+.pkg-header-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+.pkg-level {
+  display: flex; gap: 4px; align-items: center; padding-top: 0.4rem;
+}
+.pkg-level-bar {
+  width: 28px; height: 4px; border-radius: 2px;
+  background: rgba(0,0,0,0.1);
+}
+.pkg-featured .pkg-level-bar { background: rgba(255,255,255,0.1); }
+.pkg-level-bar.active { background: var(--gold); }
+
+/* Collage grid */
+.pkg-collage {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 1.2rem 0 1.5rem;
+}
+
+/* Individual tile */
+.pkg-tile {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 0.5rem;
+  text-align: center;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.pkg-tile:hover {
+  border-color: var(--gold-border);
+  transform: translateY(-2px);
+}
+.pkg-tile-dark {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.08);
+}
+.pkg-tile-dark:hover {
+  border-color: rgba(201,168,76,0.3);
+}
+
+/* Social network icons row */
+.pkg-tile-icons {
+  display: flex; justify-content: center; gap: 3px;
+  margin-bottom: 0.4rem;
+}
+.net-icon {
+  width: 18px; height: 18px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 900; color: #fff; line-height: 1;
+}
+.net-fb { background: #1877F2; }
+.net-ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.net-tt { background: #000; color: #fff; }
+
+/* Emoji icon */
+.pkg-tile-emoji { font-size: 1.4rem; line-height: 1; margin-bottom: 0.3rem; }
+
+/* Number */
+.pkg-tile-num {
+  font-family: var(--font-serif); font-weight: 700;
+  font-size: 1.4rem; color: var(--ink); line-height: 1;
+  margin-bottom: 0.2rem;
+}
+.pkg-tile-num.gold { color: var(--gold); }
+
+/* Label */
+.pkg-tile-lbl {
+  font-size: 0.62rem; color: var(--muted);
+  line-height: 1.3; letter-spacing: 0.02em;
+}
+.pkg-tile-lbl.light { color: rgba(255,255,255,0.4); }
