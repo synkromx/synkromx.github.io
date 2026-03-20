@@ -674,130 +674,150 @@ ul { list-style: none; }
   justify-content: center;
 }
 
+
 /* ============================================================
-   PACKAGE COLLAGE — Visual tiles
+   PACKAGE VISUAL REDESIGN
    ============================================================ */
 
-/* Header row with level bars */
-.pkg-header-row {
-  display: -webkit-box !important;
-  display: -ms-flexbox !important;
+/* Bigger package name */
+.pkg-name-big {
+  font-size: 1.9rem !important;
+  line-height: 1.05 !important;
+  margin-bottom: 0.4rem !important;
+}
+
+/* Pkg flex column so CTA stays at bottom */
+.pkg {
   display: flex !important;
-  -webkit-box-pack: justify !important;
-  -ms-flex-pack: justify !important;
+  flex-direction: column !important;
+}
+.pkg-cta {
+  margin-top: auto !important;
+}
+
+/* Top row: name left, investment indicator right */
+.pkg-top {
+  display: flex !important;
   justify-content: space-between !important;
-  -webkit-box-align: start !important;
-  -ms-flex-align: start !important;
   align-items: flex-start !important;
-  margin-bottom: 0.6rem;
+  gap: 1rem !important;
+  margin-bottom: 0.4rem !important;
 }
-.pkg-level {
-  display: -webkit-box !important;
-  display: -ms-flexbox !important;
-  display: flex !important;
-  gap: 4px;
-  -webkit-box-align: center !important;
-  -ms-flex-align: center !important;
-  align-items: center !important;
-  padding-top: 0.4rem;
-  flex-shrink: 0;
+.pkg-top-left {
+  flex: 1 !important;
 }
-.pkg-level-bar {
+
+/* Investment indicator box */
+.pkg-invest-box {
+  text-align: right !important;
+  flex-shrink: 0 !important;
+  padding-top: 0.2rem !important;
+}
+.pkg-invest-label {
+  font-size: 0.52rem !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+  margin-bottom: 0.35rem !important;
   display: block !important;
-  width: 28px !important;
-  height: 4px !important;
-  border-radius: 2px !important;
+}
+.pkg-invest-label-dark {
+  color: rgba(255,255,255,0.25) !important;
+}
+.pkg-invest-box-dark .pkg-invest-label {
+  color: rgba(255,255,255,0.25) !important;
+}
+.pkg-invest-bars {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 3px !important;
+  margin-bottom: 0.3rem !important;
+}
+.inv-bar {
+  display: block !important;
+  width: 26px !important;
+  height: 6px !important;
+  border-radius: 3px !important;
   background: rgba(0,0,0,0.1) !important;
 }
-.pkg-featured .pkg-level-bar { background: rgba(255,255,255,0.1) !important; }
-.pkg-level-bar.active { background: var(--gold) !important; }
+.inv-bar.inv-active,
+.inv-bar.active {
+  background: var(--gold) !important;
+}
+.inv-bar.inv-dark {
+  background: rgba(255,255,255,0.1) !important;
+}
+.pkg-invest-tag {
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  color: var(--gold) !important;
+  letter-spacing: 0.04em !important;
+  display: block !important;
+}
 
 /* Collage grid */
 .pkg-collage {
-  display: -ms-grid !important;
   display: grid !important;
-  -ms-grid-columns: 1fr 0.5rem 1fr 0.5rem 1fr !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 0.5rem !important;
-  margin: 1.2rem 0 1.5rem !important;
-  width: 100% !important;
+  gap: 0.45rem !important;
+  margin: 1rem 0 1.2rem !important;
+  flex: 1 !important;
 }
 
 /* Individual tile */
 .pkg-tile {
-  display: -webkit-box !important;
-  display: -ms-flexbox !important;
-  display: flex !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-box-direction: normal !important;
-  -ms-flex-direction: column !important;
-  flex-direction: column !important;
-  -webkit-box-align: center !important;
-  -ms-flex-align: center !important;
-  align-items: center !important;
-  -webkit-box-pack: center !important;
-  -ms-flex-pack: center !important;
-  justify-content: center !important;
-  background: var(--bg) !important;
-  border: 1px solid var(--border) !important;
+  background: rgba(0,0,0,0.03) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
   border-radius: 8px !important;
-  padding: 0.8rem 0.4rem !important;
+  padding: 0.7rem 0.4rem !important;
   text-align: center !important;
-  min-height: 90px !important;
-  transition: border-color var(--transition), transform var(--transition);
-  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.15rem !important;
+  min-height: 85px !important;
+  transition: border-color 0.2s, transform 0.2s !important;
 }
 .pkg-tile:hover {
-  border-color: var(--gold-border) !important;
-  transform: translateY(-2px) !important;
+  border-color: rgba(201,168,76,0.3) !important;
+  transform: translateY(-1px) !important;
 }
 .pkg-tile-dark {
   background: rgba(255,255,255,0.04) !important;
   border-color: rgba(255,255,255,0.08) !important;
 }
 .pkg-tile-dark:hover {
-  border-color: rgba(201,168,76,0.3) !important;
+  border-color: rgba(201,168,76,0.35) !important;
 }
 
-/* Social network icons row */
+/* Social icons row */
 .pkg-tile-icons {
-  display: -webkit-box !important;
-  display: -ms-flexbox !important;
   display: flex !important;
-  -webkit-box-pack: center !important;
-  -ms-flex-pack: center !important;
   justify-content: center !important;
-  gap: 3px !important;
-  margin-bottom: 0.4rem !important;
+  gap: 2px !important;
+  margin-bottom: 0.2rem !important;
 }
 .net-icon {
-  display: -webkit-inline-box !important;
-  display: -ms-inline-flexbox !important;
   display: inline-flex !important;
-  -webkit-box-align: center !important;
-  -ms-flex-align: center !important;
   align-items: center !important;
-  -webkit-box-pack: center !important;
-  -ms-flex-pack: center !important;
   justify-content: center !important;
-  width: 18px !important;
-  height: 18px !important;
-  border-radius: 4px !important;
-  font-size: 0.6rem !important;
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 3px !important;
+  font-size: 0.55rem !important;
   font-weight: 900 !important;
   color: #fff !important;
   line-height: 1 !important;
-  flex-shrink: 0 !important;
 }
 .net-fb { background: #1877F2 !important; }
-.net-ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important; }
-.net-tt { background: #000 !important; color: #fff !important; }
+.net-ig { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888) !important; }
+.net-tt { background: #010101 !important; }
 
-/* Emoji icon */
+/* Emoji */
 .pkg-tile-emoji {
-  font-size: 1.4rem !important;
+  font-size: 1.3rem !important;
   line-height: 1 !important;
-  margin-bottom: 0.3rem !important;
   display: block !important;
 }
 
@@ -805,89 +825,21 @@ ul { list-style: none; }
 .pkg-tile-num {
   font-family: var(--font-serif) !important;
   font-weight: 700 !important;
-  font-size: 1.3rem !important;
+  font-size: 1.25rem !important;
   color: var(--ink) !important;
   line-height: 1 !important;
-  margin-bottom: 0.2rem !important;
   display: block !important;
 }
-.pkg-tile-num.gold { color: var(--gold) !important; }
+.pkg-tile-num-gold { color: var(--gold) !important; }
 
 /* Label */
 .pkg-tile-lbl {
-  font-size: 0.58rem !important;
+  font-size: 0.56rem !important;
   color: var(--muted) !important;
-  line-height: 1.3 !important;
-  letter-spacing: 0.02em !important;
+  line-height: 1.25 !important;
   display: block !important;
 }
-.pkg-tile-lbl.light { color: rgba(255,255,255,0.4) !important; }
+.pkg-tile-lbl-light { color: rgba(255,255,255,0.4) !important; }
 
-/* ── Package name bigger ── */
-.pkg-name-big {
-  font-size: 2rem !important;
-  line-height: 1.05 !important;
-  margin-bottom: 0.5rem !important;
-}
-
-/* ── Investment level indicator ── */
-.pkg-invest {
-  text-align: right;
-  margin: 1rem 0 1.2rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid var(--border);
-}
-.pkg-invest-dark {
-  border-top-color: rgba(255,255,255,0.08);
-}
-.pkg-invest-label {
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 0.4rem;
-}
-.pkg-invest-dark .pkg-invest-label {
-  color: rgba(255,255,255,0.25);
-}
-.pkg-invest-bars {
-  display: -webkit-inline-box;
-  display: -ms-inline-flexbox;
-  display: inline-flex;
-  gap: 4px;
-  margin-bottom: 0.35rem;
-}
-.inv-bar {
-  display: block !important;
-  width: 32px !important;
-  height: 7px !important;
-  border-radius: 3px !important;
-  background: rgba(0,0,0,0.08) !important;
-}
-.pkg-featured .inv-bar {
-  background: rgba(255,255,255,0.08) !important;
-}
-.inv-bar.active {
-  background: var(--gold) !important;
-}
-.pkg-invest-tag {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--gold);
-  letter-spacing: 0.06em;
-}
-
-/* ── CTA always at bottom ── */
-.pkg-cta-bottom {
-  margin-top: auto !important;
-  display: block !important;
-}
-.pkg {
-  display: -webkit-box !important;
-  display: -ms-flexbox !important;
-  display: flex !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-box-direction: normal !important;
-  -ms-flex-direction: column !important;
-  flex-direction: column !important;
-}
+/* Social icons connector label */
+.nicho-cta p { color: rgba(255,255,255,0.5); }
