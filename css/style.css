@@ -859,3 +859,14 @@ ul { list-style: none; }
 
 /* Social icons connector label */
 .nicho-cta p { color: rgba(255,255,255,0.5); }
+
+/* Subtitle centered, single line */
+.pkg-subtitle-center {
+  text-align: center !important;
+  white-space: nowrap !important;
+  display: block !important;
+  width: 100% !important;
+}
+.pkg-top-left {
+  text-align: left !important;
+}
