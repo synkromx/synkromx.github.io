@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Bash(python -m http.server 8080)"
+    ]
+  }
+}

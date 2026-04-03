@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synkro — Aprobación de Campaña</title>
+  <style>
+    :root {
+      --bg:         #0f2847;
+      --surface:    #0a1e3a;
+      --card:       #0f3460;
+      --gold:       #b8860b;
+      --gold-l:     #d4a017;
+      --gold-xl:    #e8b923;
+      --gold-glow:  rgba(184,134,11,.3);
+      --text:       #ffffff;
+      --text-s:     #c5d8f5;
+      --text-m:     #5a7898;
+      --border-g:   rgba(184,134,11,.18);
+      --r:          14px;
+      --rs:         8px;
+      --shadow:     0 8px 40px rgba(0,0,0,.6);
+      /* Backward-compat aliases — teal → gold */
+      --teal:       #b8860b;
+      --teal-l:     #d4a017;
+      --teal-xl:    #e8b923;
+      --teal-glow:  rgba(184,134,11,.3);
+      --border-t:   rgba(184,134,11,.18);
+      --approve:    #22c55e;
+      --approve-bg: rgba(34,197,94,.12);
+      --change:     #ea580c;
+      --change-bg:  rgba(234,88,12,.1);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 70% 40% at 10% 5%,  rgba(184,134,11,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 90% 90%, rgba(184,134,11,.04) 0%, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:var(--surface)}
+    ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
+
+    /* ─── HEADER ──────────────────────────────────── */
+    .a-header {
+      background: rgba(15,40,71,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border-g);
+      padding: 0 24px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .a-header-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 16px 0;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .a-header-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap;
+    }
+    .a-logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-img {
+      height: 48px;
+      display: block;
+      object-fit: contain;
+    }
+    .a-logo-tag {
+      font-size: .65rem; color: var(--text-m); font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+    .a-campaign-info { display: flex; gap: 16px; flex-wrap: wrap; font-size: .78rem; color: var(--text-s) }
+    .a-info-item { display: flex; gap: 5px; align-items: center }
+    .a-info-label { color: var(--text-m); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: .68rem }
+    .a-info-value { color: var(--text); font-weight: 700 }
+    .a-timer {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(184,134,11,.1); border: 1px solid var(--border-g);
+      border-radius: var(--rs); padding: 6px 14px;
+      font-size: .82rem; font-weight: 700; color: var(--gold-l);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .a-timer.expired { background: rgba(224,85,85,.1); border-color: rgba(224,85,85,.3); color: #e07070 }
+    .a-progress-row {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .a-progress-bar-wrap {
+      flex: 1; background: var(--surface); border-radius: 4px; height: 8px; overflow: hidden;
+      border: 1px solid var(--border-g);
+    }
+    .a-progress-bar {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-xl));
+      transition: width .5s ease;
+    }
+    .a-progress-text { font-size: .78rem; color: var(--text-s); white-space: nowrap; font-weight: 600 }
+
+    /* ─── NETWORK TABS ────────────────────────── */
+    .a-tabs {
+      background: rgba(10,30,58,.65); border-bottom: 1px solid var(--border-g);
+      padding: 0 24px; position: sticky; top: 96px; z-index: 90;
+      overflow-x: auto;
+    }
+    .a-tabs-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; gap: 0;
+    }
+    .a-tab {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px; cursor: pointer; border: none;
+      background: none; color: var(--text-m); font-size: .84rem; font-weight: 700;
+      border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap;
+    }
+    .a-tab:hover { color: var(--text-s) }
+    .a-tab.active { color: var(--text); border-bottom-color: var(--gold-xl) }
+    .a-tab-badge {
+      background: var(--surface); border: 1px solid var(--border-g);
+      border-radius: 20px; padding: 2px 8px; font-size: .68rem; font-weight: 700;
+    }
+    .a-tab.active .a-tab-badge { background: var(--gold); border-color: var(--gold); color: #fff }
+
+    /* ─── MAIN ────────────────────────────────── */
+    .a-main {
+      max-width: 1200px; margin: 0 auto; padding: 28px 24px 120px;
+    }
+    .a-posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    @media(max-width:680px) { .a-posts-grid { grid-template-columns: 1fr } }
+
+    /* ─── POST CARD ───────────────────────────── */
+    .a-post-card {
+      background: var(--card); border: 1px solid var(--border-g);
+      border-radius: var(--r); overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform .2s, box-shadow .2s, border-color .3s;
+    }
+    .a-post-card:hover { transform: translateY(-3px); box-shadow: var(--shadow) }
+    .a-post-card.is-approved {
+      border-color: rgba(34,197,94,.45);
+      box-shadow: 0 0 24px rgba(34,197,94,.1);
+    }
+    .a-post-card.is-changes {
+      border-color: rgba(234,88,12,.45);
+      box-shadow: 0 0 24px rgba(234,88,12,.1);
+    }
+    .a-post-status-bar {
+      padding: 7px 14px; font-size: .7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .a-post-status-bar.pending  { background: rgba(184,134,11,.1); color: var(--gold-l) }
+    .a-post-status-bar.approved { background: rgba(34,197,94,.12); color: #4ade80 }
+    .a-post-status-bar.changes  { background: rgba(234,88,12,.1);  color: #fb923c }
+    .a-post-num { font-size: .68rem; color: var(--text-m); margin-left: auto }
+
+    /* Mockup wrappers */
+    .a-mockup-wrap { padding: 14px; flex: 1 }
+
+    /* ── Instagram mockup ── */
+    .ig-mock {
+      background: #fff; border-radius: 10px; overflow: hidden;
+      color: #262626; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px; box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    .ig-mock-head {
+      display: flex; align-items: center; padding: 9px 12px; gap: 9px;
+    }
+    .ig-mock-av {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      padding: 2px;
+    }
+    .ig-mock-av-inner {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #262626; font-weight: 700;
+    }
+    .ig-mock-uname { flex: 1; font-weight: 700; font-size: 13px }
+    .ig-mock-more { color: #8e8e8e; font-size: 18px; line-height: 1 }
+    .ig-mock-photo {
+      width: 100%; aspect-ratio: 1/1; overflow: hidden;
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3.5rem; color: rgba(255,255,255,.35);
+    }
+    .ig-mock-actions {
+      display: flex; align-items: center; padding: 9px 12px 4px; gap: 12px;
+    }
+    .ig-mock-icons-l { display: flex; gap: 10px }
+    .ig-mock-icon { font-size: 20px; cursor: pointer; user-select: none }
+    .ig-mock-bookmark { margin-left: auto }
+    .ig-mock-likes { padding: 2px 12px 4px; font-weight: 700; font-size: 12px }
+    .ig-mock-caption {
+      padding: 2px 12px 6px; font-size: 12px; line-height: 1.5;
+      max-height: 180px; overflow-y: auto;
+    }
+    .ig-mock-caption b { font-weight: 700 }
+    .ig-mock-hashtags {
+      padding: 0 12px 10px; font-size: 11px;
+      color: #00376b; line-height: 1.7; word-break: break-word;
+    }
+    .ig-mock-time { padding: 0 12px 10px; font-size: 10px; color: #8e8e8e }
+
+    /* ── Facebook mockup ── */
+    .fb-mock {
+      background: #fff; border-radius: 10px; overflow: hidden;
+      color: #050505; font-family: 'Helvetica Neue', Arial, sans-serif;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+    .fb-mock-head {
+      display: flex; align-items: center; padding: 12px 14px; gap: 9px;
+    }
+    .fb-mock-av {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: #1877f2; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: 16px;
+    }
+    .fb-mock-meta { flex: 1 }
+    .fb-mock-page { font-size: 14px; font-weight: 700 }
+    .fb-mock-time { font-size: 11px; color: #65676b }
+    .fb-mock-more { color: #65676b; font-size: 20px; line-height: 1 }
+    .fb-mock-body {
+      padding: 0 14px 14px; font-size: 13px; line-height: 1.65;
+      max-height: 260px; overflow-y: auto; white-space: pre-wrap; color: #050505;
+    }
+    .fb-mock-divider { height: 1px; background: #e4e6eb; margin: 0 }
+    .fb-mock-actions { display: flex }
+    .fb-mock-btn {
+      flex: 1; padding: 10px 8px; text-align: center;
+      font-size: 13px; color: #65676b; cursor: pointer;
+      border-radius: 0; background: none;
+      transition: background .15s;
+    }
+    .fb-mock-btn:hover { background: #f2f2f2 }
+
+    /* ── TikTok mockup ── */
+    .tk-mock-outer {
+      max-width: 200px; margin: 0 auto;
+      background: #010101; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,.5);
+    }
+    .tk-mock-video {
+      aspect-ratio: 9/16; position: relative; overflow: hidden;
+      background: linear-gradient(170deg,#1a1a2e,#16213e,#0f3460,#533483);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tk-mock-play { color: rgba(255,255,255,.2); font-size: 3.5rem; z-index: 1 }
+    .tk-mock-side {
+      position: absolute; right: 8px; bottom: 80px;
+      display: flex; flex-direction: column; gap: 14px; align-items: center; z-index: 2;
+    }
+    .tk-mock-side-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: #fff; user-select: none;
+    }
+    .tk-mock-side-item span { font-size: 22px }
+    .tk-mock-side-item small { font-size: 10px; color: rgba(255,255,255,.8) }
+    .tk-mock-bottom {
+      position: absolute; left: 0; right: 44px; bottom: 0;
+      padding: 10px 10px 12px;
+      background: linear-gradient(transparent,rgba(0,0,0,.75));
+      z-index: 2;
+    }
+    .tk-mock-user { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 3px }
+    .tk-mock-cap {
+      font-size: 11px; color: rgba(255,255,255,.92); line-height: 1.4;
+      max-height: 60px; overflow: hidden;
+    }
+    .tk-mock-tags { font-size: 11px; color: #69c9d0; margin-top: 3px; line-height: 1.5 }
+    .tk-mock-sound {
+      font-size: 10px; color: rgba(255,255,255,.65); margin-top: 5px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ─── APPROVAL ACTIONS ────────────────────── */
+    .a-post-btns {
+      display: flex; gap: 9px; padding: 12px 14px;
+      border-top: 1px solid var(--border-g);
+    }
+    .btn-ap {
+      flex: 1; cursor: pointer; border-radius: var(--rs);
+      padding: 9px 14px; font-size: .8rem; font-weight: 700;
+      transition: all .2s; border: 1px solid;
+    }
+    .btn-ap-approve {
+      background: var(--approve-bg); border-color: rgba(34,197,94,.4); color: #4ade80;
+    }
+    .btn-ap-approve:hover { background: rgba(34,197,94,.22); transform: translateY(-1px) }
+    .btn-ap-approve:disabled { opacity: .5; cursor: default; transform: none }
+    .btn-ap-change {
+      background: var(--change-bg); border-color: rgba(234,88,12,.35); color: #fb923c;
+    }
+    .btn-ap-change:hover { background: rgba(234,88,12,.2); transform: translateY(-1px) }
+    .btn-ap-change:disabled { opacity: .5; cursor: default; transform: none }
+
+    .a-post-approved-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(34,197,94,.08); border-top: 1px solid rgba(34,197,94,.2);
+      font-size: .82rem; font-weight: 600; color: #4ade80;
+    }
+    .btn-undo {
+      background: none; border: none; color: var(--text-m); cursor: pointer;
+      font-size: .74rem; text-decoration: underline; transition: color .2s;
+    }
+    .btn-undo:hover { color: var(--text-s) }
+
+    .a-change-form {
+      padding: 12px 14px; border-top: 1px solid var(--border-g);
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .a-change-label { font-size: .74rem; font-weight: 700; color: #fb923c; text-transform: uppercase; letter-spacing: .06em }
+    .a-change-textarea {
+      background: var(--surface); border: 1px solid rgba(234,88,12,.3);
+      color: var(--text); border-radius: var(--rs); padding: 9px 12px;
+      font-size: .84rem; font-family: inherit; resize: vertical; min-height: 70px;
+      outline: none; transition: border-color .2s;
+    }
+    .a-change-textarea:focus { border-color: #fb923c }
+    .a-change-textarea::placeholder { color: var(--text-m) }
+    .btn-send-change {
+      background: rgba(234,88,12,.8); border: none; color: #fff; cursor: pointer;
+      padding: 8px 18px; border-radius: var(--rs); font-size: .8rem; font-weight: 700;
+      transition: all .2s; align-self: flex-end;
+    }
+    .btn-send-change:hover { background: rgb(234,88,12) }
+
+    .a-changes-display {
+      padding: 10px 14px; border-top: 1px solid rgba(234,88,12,.2);
+      background: rgba(234,88,12,.06);
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .a-changes-comment { font-size: .82rem; color: #fb923c; font-style: italic }
+    .btn-edit-comment {
+      font-size: .74rem; color: var(--text-m); cursor: pointer;
+      text-decoration: underline; align-self: flex-start; background: none; border: none;
+      transition: color .2s;
+    }
+    .btn-edit-comment:hover { color: var(--text-s) }
+
+    /* ─── STICKY FOOTER ───────────────────────── */
+    .a-footer {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(15,40,71,.96); backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border-g); padding: 12px 24px;
+    }
+    .a-footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap;
+    }
+    .a-footer-stats { font-size: .82rem; color: var(--text-s) }
+    .a-footer-stats strong { color: var(--text); margin-right: 4px }
+    .btn-approve-all {
+      background: linear-gradient(135deg, var(--gold) 0%, #9a6f09 50%, var(--gold-l) 100%);
+      border: 1px solid var(--gold); color: #fff; cursor: pointer;
+      padding: 11px 28px; border-radius: 40px;
+      font-size: .88rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      transition: all .25s;
+      box-shadow: 0 0 24px var(--gold-glow);
+    }
+    .btn-approve-all:hover { transform: translateY(-2px); box-shadow: 0 0 40px var(--gold-glow) }
+    .btn-approve-all:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none }
+
+    /* ─── SUCCESS SCREEN ──────────────────────── */
+    .a-success {
+      position: fixed; inset: 0; z-index: 999;
+      background: radial-gradient(ellipse at center, rgba(184,134,11,.18) 0%, var(--bg) 70%);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .a-success.hidden { display: none }
+    .a-success-card {
+      background: var(--card); border: 1px solid rgba(34,197,94,.4);
+      border-radius: 20px; padding: 48px 40px; text-align: center;
+      max-width: 480px; width: 90%;
+      box-shadow: 0 0 80px rgba(34,197,94,.15);
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    .a-success-icon { font-size: 4rem }
+    .a-success-title { font-size: 1.8rem; font-weight: 900; color: #4ade80 }
+    .a-success-sub { color: var(--text-s); font-size: .92rem; line-height: 1.6 }
+    .a-success-details {
+      background: var(--surface); border-radius: var(--rs); padding: 16px 20px;
+      font-size: .82rem; color: var(--text-s); line-height: 1.8; width: 100%; text-align: left;
+    }
+    .a-success-ts { font-size: .74rem; color: var(--text-m); margin-top: 8px }
+
+    /* ─── ERROR / LOADING ─────────────────────── */
+    .a-center {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .a-error-card, .a-loading-card {
+      background: var(--card); border: 1px solid var(--border-g);
+      border-radius: var(--r); padding: 40px 36px; text-align: center;
+      max-width: 440px; width: 100%;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .a-error-icon, .a-loading-icon { font-size: 3rem }
+    .a-error-title { font-size: 1.2rem; font-weight: 700; color: var(--gold-xl) }
+    .a-error-desc { font-size: .84rem; color: var(--text-s); line-height: 1.6 }
+    .a-spinner {
+      width: 40px; height: 40px; border: 3px solid rgba(255,255,255,.1);
+      border-top-color: var(--gold-xl); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    @media(max-width:600px) {
+      .a-header-top { flex-direction: column; align-items: flex-start }
+      .a-footer-inner { flex-direction: column; align-items: stretch }
+      .btn-approve-all { text-align: center }
+    }
+  </style>
+</head>
+<body>
+
+<div id="appRoot"></div>
+<div id="aSuccess" class="a-success hidden">
+  <div class="a-success-card">
+    <div class="a-success-icon">🎉</div>
+    <div class="a-success-title">¡Campaña Aprobada!</div>
+    <div class="a-success-sub">Has aprobado todos los posts. Tu agencia recibirá la notificación y comenzará a programar el contenido.</div>
+    <div class="a-success-details" id="successDetails"></div>
+    <div class="a-success-ts" id="successTs"></div>
+  </div>
+</div>
+
+<script>
+// ── Bootstrap ──────────────────────────────────────────────────────────────
+const params  = new URLSearchParams(window.location.search);
+const CODE    = (params.get('code') || '').toUpperCase().trim();
+let   data    = null;
+let   activeNet = 'instagram';
+let   timerRef  = null;
+
+function init() {
+  if (!CODE) return showError('Sin código', 'No se proporcionó un código de campaña en la URL.');
+
+  const raw = localStorage.getItem(`synkro_approval_${CODE}`);
+  if (!raw)  return showError('Campaña no encontrada',
+    `No existe una campaña con el código <strong>${escH(CODE)}</strong>.<br><br>
+     Verifica que el link sea correcto o pide uno nuevo a tu agencia.`);
+
+  try { data = JSON.parse(raw); }
+  catch { return showError('Error de datos', 'Los datos de la campaña están corruptos.'); }
+
+  renderPage();
+  startCountdown();
+  checkAllApproved();
+}
+
+// ── Render principal ───────────────────────────────────────────────────────
+function renderPage() {
+  const nets = ['instagram','facebook','tiktok'].filter(n => (data.posts[n]||[]).length > 0);
+  if (nets.length && !nets.includes(activeNet)) activeNet = nets[0];
+
+  const root = document.getElementById('appRoot');
+  root.innerHTML = `
+    ${buildHeader()}
+    ${buildTabs(nets)}
+    <div class="a-main">
+      <div class="a-posts-grid" id="postsGrid"></div>
+    </div>
+    ${buildFooter()}
+  `;
+
+  // Tab events
+  root.querySelectorAll('.a-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeNet = btn.dataset.net;
+      root.querySelectorAll('.a-tab').forEach(b => b.classList.toggle('active', b.dataset.net === activeNet));
+      renderPostsGrid();
+      updateProgress();
+    });
+  });
+
+  document.getElementById('btnApproveAll').addEventListener('click', approveAllPending);
+
+  renderPostsGrid();
+  updateProgress();
+}
+
+function buildHeader() {
+  return `
+    <header class="a-header">
+      <div class="a-header-inner">
+        <div class="a-header-top">
+          <div class="a-logo">
+            <img src="SYNKRO Fondo transparente Cuadrada.png" class="logo-img" alt="Synkro">
+            <span class="a-logo-tag">Aprobación de Campaña</span>
+          </div>
+          <div id="aTimer" class="a-timer">⏳ Calculando...</div>
+        </div>
+        <div class="a-campaign-info">
+          <div class="a-info-item">
+            <span class="a-info-label">Cliente</span>
+            <span class="a-info-value">${escH(data.clientName)}</span>
+          </div>
+          <div class="a-info-item">
+            <span class="a-info-label">Mes</span>
+            <span class="a-info-value">${escH(data.mes)}</span>
+          </div>
+          <div class="a-info-item">
+            <span class="a-info-label">Servicio</span>
+            <span class="a-info-value">${escH(data.servicio)}</span>
+          </div>
+          <div class="a-info-item">
+            <span class="a-info-label">Código</span>
+            <span class="a-info-value" style="font-family:monospace;letter-spacing:.12em;color:var(--gold-xl)">${escH(data.code)}</span>
+          </div>
+        </div>
+        <div class="a-progress-row">
+          <div class="a-progress-bar-wrap">
+            <div class="a-progress-bar" id="aProgressBar" style="width:0%"></div>
+          </div>
+          <div class="a-progress-text" id="aProgressText">0 aprobados</div>
+        </div>
+      </div>
+    </header>
+  `;
+}
+
+function buildTabs(nets) {
+  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  const icons  = { instagram:'📷', facebook:'👥', tiktok:'🎵' };
+  return `
+    <nav class="a-tabs">
+      <div class="a-tabs-inner">
+        ${nets.map(n => `
+          <button class="a-tab ${n === activeNet ? 'active' : ''}" data-net="${n}">
+            ${icons[n]} ${labels[n]}
+            <span class="a-tab-badge">${(data.posts[n]||[]).length}</span>
+          </button>
+        `).join('')}
+      </div>
+    </nav>
+  `;
+}
+
+function buildFooter() {
+  return `
+    <div class="a-footer">
+      <div class="a-footer-inner">
+        <div class="a-footer-stats" id="footerStats"></div>
+        <button class="btn-approve-all" id="btnApproveAll">✓ Aprobar Todo lo Pendiente</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── Posts grid ─────────────────────────────────────────────────────────────
+function renderPostsGrid() {
+  const grid  = document.getElementById('postsGrid');
+  if (!grid)  return;
+  const items = data.posts[activeNet] || [];
+  grid.innerHTML = '';
+  items.forEach((item, idx) => {
+    const card = buildPostCard(activeNet, item, idx);
+    grid.appendChild(card);
+  });
+  updateFooterStats();
+  updateApproveAllBtn();
+}
+
+function buildPostCard(net, item, idx) {
+  const key    = `${net}_${idx}`;
+  const approval = data.approvals[key] || { status:'pending', comment:'' };
+
+  const card = document.createElement('div');
+  card.id = `card-${key}`;
+  card.className = `a-post-card ${approval.status === 'approved' ? 'is-approved' : approval.status === 'changes' ? 'is-changes' : ''}`;
+
+  const statusBar = buildStatusBar(approval.status, idx + 1);
+  const mockup    = buildMockup(net, item, data.clientName);
+  const actions   = buildActions(key, approval);
+
+  card.innerHTML = statusBar + `<div class="a-mockup-wrap">${mockup}</div>` + actions;
+
+  // Wire up buttons
+  wireCardButtons(card, key, approval.status);
+  return card;
+}
+
+function buildStatusBar(status, num) {
+  const labels = { pending:'⏳ Pendiente revisión', approved:'✅ Aprobado', changes:'✏️ Cambios solicitados' };
+  return `
+    <div class="a-post-status-bar ${status}">
+      ${labels[status] || status}
+      <span class="a-post-num">Post #${num}</span>
+    </div>
+  `;
+}
+
+function buildActions(key, approval) {
+  if (approval.status === 'approved') {
+    return `
+      <div class="a-post-approved-bar" id="actions-${escH(key)}">
+        ✅ Aprobado
+        <button class="btn-undo" data-key="${escH(key)}">Deshacer</button>
+      </div>
+    `;
+  }
+  if (approval.status === 'changes') {
+    return `
+      <div class="a-changes-display" id="actions-${escH(key)}">
+        <span class="a-changes-comment">Tu comentario: "${escH(approval.comment)}"</span>
+        <button class="btn-edit-comment" data-key="${escH(key)}">Editar comentario</button>
+      </div>
+      <div class="a-post-btns">
+        <button class="btn-ap btn-ap-approve" data-key="${escH(key)}">✓ Aprobar igual</button>
+      </div>
+    `;
+  }
+  // pending
+  return `
+    <div class="a-post-btns" id="actions-${escH(key)}">
+      <button class="btn-ap btn-ap-approve" data-key="${escH(key)}">✓ Aprobar</button>
+      <button class="btn-ap btn-ap-change"  data-key="${escH(key)}">✏️ Solicitar cambio</button>
+    </div>
+  `;
+}
+
+function wireCardButtons(card, key, currentStatus) {
+  // Approve buttons
+  card.querySelectorAll('.btn-ap-approve[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => { approve(key); refreshCard(key); });
+  });
+  // Change buttons (show form)
+  card.querySelectorAll('.btn-ap-change[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => showChangeForm(card, key));
+  });
+  // Undo
+  const undoBtn = card.querySelector('.btn-undo');
+  if (undoBtn) undoBtn.addEventListener('click', () => { undoApproval(key); refreshCard(key); });
+  // Edit comment
+  const editBtn = card.querySelector('.btn-edit-comment');
+  if (editBtn) editBtn.addEventListener('click', () => showChangeForm(card, key));
+}
+
+function showChangeForm(card, key) {
+  const existing = card.querySelector('.a-change-form');
+  if (existing) return;
+
+  const form = document.createElement('div');
+  form.className = 'a-change-form';
+  form.innerHTML = `
+    <span class="a-change-label">¿Qué hay que cambiar?</span>
+    <textarea class="a-change-textarea" placeholder="Ej: Cambia el tono, quita el emoji del corazón, agrega el precio..."></textarea>
+    <button class="btn-send-change">Enviar comentario</button>
+  `;
+  card.appendChild(form);
+
+  // Pre-fill if already has comment
+  const existing_comment = data.approvals[key]?.comment || '';
+  if (existing_comment) form.querySelector('textarea').value = existing_comment;
+  form.querySelector('textarea').focus();
+
+  form.querySelector('.btn-send-change').addEventListener('click', () => {
+    const comment = form.querySelector('textarea').value.trim();
+    if (!comment) { form.querySelector('textarea').style.borderColor = '#ea580c'; return; }
+    requestChange(key, comment);
+    refreshCard(key);
+  });
+}
+
+function refreshCard(key) {
+  const [net, idxStr] = key.split('_');
+  const idx   = Number(idxStr);
+  const item  = (data.posts[net] || [])[idx];
+  if (!item) return;
+
+  const oldCard = document.getElementById(`card-${key}`);
+  if (!oldCard) return;
+
+  const newCard = buildPostCard(net, item, idx);
+  oldCard.replaceWith(newCard);
+  updateProgress();
+  updateFooterStats();
+  updateApproveAllBtn();
+  checkAllApproved();
+}
+
+// ── Approval actions ───────────────────────────────────────────────────────
+function approve(key) {
+  data.approvals[key] = { status: 'approved', comment: '' };
+  saveData();
+}
+function undoApproval(key) {
+  data.approvals[key] = { status: 'pending', comment: '' };
+  saveData();
+}
+function requestChange(key, comment) {
+  data.approvals[key] = { status: 'changes', comment };
+  saveData();
+}
+function approveAllPending() {
+  let changed = false;
+  Object.keys(data.approvals).forEach(key => {
+    const [net] = key.split('_');
+    if (net === activeNet && data.approvals[key].status === 'pending') {
+      data.approvals[key] = { status: 'approved', comment: '' };
+      changed = true;
+    }
+  });
+  if (changed) { saveData(); renderPostsGrid(); updateProgress(); checkAllApproved(); }
+}
+
+function saveData() {
+  data.lastUpdated = Date.now();
+  localStorage.setItem(`synkro_approval_${CODE}`, JSON.stringify(data));
+}
+
+// ── Progress ───────────────────────────────────────────────────────────────
+function updateProgress() {
+  const vals     = Object.values(data.approvals);
+  const total    = vals.length;
+  const approved = vals.filter(v => v.status === 'approved').length;
+  const pct      = total ? Math.round(approved / total * 100) : 0;
+
+  const bar  = document.getElementById('aProgressBar');
+  const text = document.getElementById('aProgressText');
+  if (bar)  bar.style.width  = `${pct}%`;
+  if (text) text.textContent = `${approved}/${total} posts aprobados · ${pct}%`;
+}
+
+function updateFooterStats() {
+  const stats = document.getElementById('footerStats');
+  if (!stats) return;
+  const netItems = data.posts[activeNet] || [];
+  const approvedInNet = netItems.filter((_, i) => data.approvals[`${activeNet}_${i}`]?.status === 'approved').length;
+  const changesInNet  = netItems.filter((_, i) => data.approvals[`${activeNet}_${i}`]?.status === 'changes').length;
+  stats.innerHTML = `
+    <strong>${escH(activeNet.charAt(0).toUpperCase() + activeNet.slice(1))}:</strong>
+    ${approvedInNet} aprobados · ${changesInNet} con cambios · ${netItems.length - approvedInNet - changesInNet} pendientes
+  `;
+}
+
+function updateApproveAllBtn() {
+  const btn     = document.getElementById('btnApproveAll');
+  if (!btn)     return;
+  const netItems = data.posts[activeNet] || [];
+  const pendingCount = netItems.filter((_, i) => data.approvals[`${activeNet}_${i}`]?.status === 'pending').length;
+  btn.disabled    = pendingCount === 0;
+  btn.textContent = pendingCount > 0
+    ? `✓ Aprobar los ${pendingCount} posts pendientes`
+    : '✓ Todo aprobado en esta red';
+}
+
+function checkAllApproved() {
+  const vals = Object.values(data.approvals);
+  if (vals.length > 0 && vals.every(v => v.status === 'approved')) {
+    showSuccessScreen();
+  }
+}
+
+function showSuccessScreen() {
+  const screen = document.getElementById('aSuccess');
+  const details = document.getElementById('successDetails');
+  const ts = document.getElementById('successTs');
+  if (!screen) return;
+
+  const nets   = ['instagram','facebook','tiktok'];
+  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  const counts = nets.map(n => `${labels[n]}: ${(data.posts[n]||[]).length} posts`).join(' · ');
+
+  details.innerHTML = `
+    <div>${escH(data.clientName)} · ${escH(data.mes)} · Paquete ${escH(data.packageType)}</div>
+    <div style="margin-top:6px">${counts}</div>
+  `;
+  ts.textContent = `Aprobado el ${new Date().toLocaleString('es-ES', { dateStyle:'long', timeStyle:'short' })}`;
+  screen.classList.remove('hidden');
+}
+
+// ── Countdown ──────────────────────────────────────────────────────────────
+function startCountdown() {
+  updateTimer();
+  timerRef = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  const el = document.getElementById('aTimer');
+  if (!el)  return;
+  const remaining = Math.max(0, data.createdAt + 48 * 3600000 - Date.now());
+  if (remaining === 0) {
+    el.className = 'a-timer expired';
+    el.textContent = '⏰ Tiempo expirado';
+    clearInterval(timerRef);
+    return;
+  }
+  const h  = Math.floor(remaining / 3600000);
+  const m  = Math.floor((remaining % 3600000) / 60000);
+  const s  = Math.floor((remaining % 60000) / 1000);
+  el.className = 'a-timer';
+  el.textContent = `⏱ ${pad(h)}:${pad(m)}:${pad(s)} restantes`;
+}
+function pad(n) { return String(n).padStart(2,'0') }
+
+// ── Mockup builders ────────────────────────────────────────────────────────
+function buildMockup(net, item, clientName) {
+  const initial = (clientName || '?').trim().charAt(0).toUpperCase();
+  const handle  = '@' + (clientName || 'negocio').toLowerCase().replace(/\s+/g,'_').slice(0,18);
+
+  if (net === 'instagram') {
+    const caption   = item.caption  || '';
+    const hashtags  = item.hashtags || '';
+    const shortCap  = caption.length > 200 ? caption.slice(0,200) + '…' : caption;
+    return `
+      <div class="ig-mock">
+        <div class="ig-mock-head">
+          <div class="ig-mock-av">
+            <div class="ig-mock-av-inner">${escH(initial)}</div>
+          </div>
+          <div class="ig-mock-uname">${escH(handle)}</div>
+          <div class="ig-mock-more">•••</div>
+        </div>
+        <div class="ig-mock-photo">📸</div>
+        <div class="ig-mock-actions">
+          <div class="ig-mock-icons-l">
+            <span class="ig-mock-icon">♡</span>
+            <span class="ig-mock-icon">💬</span>
+            <span class="ig-mock-icon">↗</span>
+          </div>
+          <span class="ig-mock-icon ig-mock-bookmark">⊟</span>
+        </div>
+        <div class="ig-mock-likes">1,234 Me gusta</div>
+        <div class="ig-mock-caption"><b>${escH(handle)}</b> ${escH(shortCap)}</div>
+        <div class="ig-mock-hashtags">${escH(hashtags)}</div>
+        <div class="ig-mock-time">hace 2 horas</div>
+      </div>
+    `;
+  }
+
+  if (net === 'facebook') {
+    const post = item.post || '';
+    return `
+      <div class="fb-mock">
+        <div class="fb-mock-head">
+          <div class="fb-mock-av">${escH(initial)}</div>
+          <div class="fb-mock-meta">
+            <div class="fb-mock-page">${escH(clientName)}</div>
+            <div class="fb-mock-time">2h · 🌐</div>
+          </div>
+          <div class="fb-mock-more">•••</div>
+        </div>
+        <div class="fb-mock-body">${escH(post)}</div>
+        <div class="fb-mock-divider"></div>
+        <div class="fb-mock-actions">
+          <div class="fb-mock-btn">👍 Me gusta</div>
+          <div class="fb-mock-btn">💬 Comentar</div>
+          <div class="fb-mock-btn">↗ Compartir</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (net === 'tiktok') {
+    const caption  = item.caption  || '';
+    const hashtags = item.hashtags || '';
+    const shortCap = caption.length > 90 ? caption.slice(0,90) + '…' : caption;
+    return `
+      <div class="tk-mock-outer">
+        <div class="tk-mock-video">
+          <div class="tk-mock-play">▶</div>
+          <div class="tk-mock-side">
+            <div class="tk-mock-side-item"><span>♡</span><small>2.3K</small></div>
+            <div class="tk-mock-side-item"><span>💬</span><small>456</small></div>
+            <div class="tk-mock-side-item"><span>↗</span><small>123</small></div>
+            <div class="tk-mock-side-item"><span>🎵</span><small>sonido</small></div>
+          </div>
+          <div class="tk-mock-bottom">
+            <div class="tk-mock-user">${escH(handle)}</div>
+            <div class="tk-mock-cap">${escH(shortCap)}</div>
+            <div class="tk-mock-tags">${escH(hashtags.split(' ').slice(0,5).join(' '))}</div>
+            <div class="tk-mock-sound">♪ sonido original</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `<div style="padding:16px;color:var(--text-s);font-size:.82rem;">${escH(JSON.stringify(item))}</div>`;
+}
+
+// ── Error / Loading screens ────────────────────────────────────────────────
+function showError(title, desc) {
+  document.getElementById('appRoot').innerHTML = `
+    <div class="a-center">
+      <div class="a-error-card">
+        <div class="a-error-icon">⚠️</div>
+        <div class="a-error-title">${escH(title)}</div>
+        <div class="a-error-desc">${desc}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function escH(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Start ──────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synkro — Campaign Generator</title>
+  <style>
+    :root {
+      --bg:         #0f2847;
+      --surface:    #0a1e3a;
+      --card:       #0f3460;
+      --card-hover: #133d70;
+      --gold:       #b8860b;
+      --gold-l:     #d4a017;
+      --gold-xl:    #e8b923;
+      --gold-glow:  rgba(184,134,11,.3);
+      --text:       #ffffff;
+      --text-s:     #c5d8f5;
+      --text-m:     #5a7898;
+      --border-g:   rgba(184,134,11,.18);
+      --r:          14px;
+      --rs:         8px;
+      --shadow:     0 8px 40px rgba(0,0,0,.6);
+      /* Backward-compat aliases — teal → gold so app.js-rendered HTML picks up new palette */
+      --teal:       #b8860b;
+      --teal-l:     #d4a017;
+      --teal-xl:    #e8b923;
+      --teal-glow:  rgba(184,134,11,.3);
+      --border-t:   rgba(184,134,11,.18);
+      --approve:    #22c55e;
+      --approve-bg: rgba(34,197,94,.12);
+      --change:     #ea580c;
+      --change-bg:  rgba(234,88,12,.1);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 70% 40% at 10% 5%,  rgba(184,134,11,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 90% 90%, rgba(184,134,11,.04) 0%, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px }
+    ::-webkit-scrollbar-track { background: var(--surface) }
+    ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,40,71,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border-g);
+      padding: 0 32px;
+    }
+    .header-inner {
+      max-width: 1400px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px;
+    }
+    .logo-img {
+      height: 48px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .btn-apikey {
+      display: flex; align-items: center; gap: 8px;
+      background: transparent;
+      border: 1px solid var(--border-g);
+      color: var(--gold-l); cursor: pointer;
+      padding: 8px 18px; border-radius: var(--rs);
+      font-size: .82rem; font-weight: 600; letter-spacing: .04em;
+      transition: all .2s;
+    }
+    .btn-apikey:hover {
+      background: rgba(184,134,11,.1);
+      border-color: var(--gold);
+      color: var(--gold-xl);
+    }
+    .btn-apikey svg { width: 14px; height: 14px }
+
+    /* ─── MODAL ──────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(4,10,20,.88);
+      backdrop-filter: blur(8px);
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border-g);
+      border-radius: var(--r);
+      padding: 36px;
+      width: min(480px, 90vw);
+      box-shadow: var(--shadow), 0 0 60px rgba(184,134,11,.1);
+      position: relative;
+    }
+    .modal h3 {
+      color: var(--gold-xl); font-size: 1.1rem;
+      margin-bottom: 6px; font-weight: 800; letter-spacing: .02em;
+    }
+    .modal p { color: var(--text-s); font-size: .82rem; margin-bottom: 22px; line-height: 1.7 }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none; color: var(--text-m);
+      font-size: 1.2rem; cursor: pointer; line-height: 1;
+      transition: color .2s;
+    }
+    .modal-close:hover { color: var(--text) }
+    .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px }
+    .field-group label {
+      font-size: .73rem; color: var(--gold-l); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .field-input {
+      background: var(--surface);
+      border: 1px solid var(--border-g);
+      color: var(--text); border-radius: var(--rs);
+      padding: 11px 14px; font-size: .88rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+      font-family: inherit;
+    }
+    .field-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+    .btn-save {
+      width: 100%;
+      background: var(--gold);
+      border: none; color: #fff; cursor: pointer;
+      padding: 12px; border-radius: var(--rs);
+      font-size: .9rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      transition: background .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 4px 16px rgba(184,134,11,.35);
+    }
+    .btn-save:hover { background: var(--gold-l); box-shadow: 0 6px 24px rgba(184,134,11,.45) }
+    .btn-save:active { transform: scale(.98) }
+
+    /* ─── MAIN ───────────────────────────────────────────── */
+    main {
+      max-width: 1400px; margin: 0 auto;
+      padding: 44px 32px 80px;
+      display: flex; flex-direction: column; gap: 32px;
+    }
+
+    /* ─── SECTION TITLES ─────────────────────────────────── */
+    .section-title {
+      font-size: .68rem; font-weight: 800; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--gold-l);
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border-g);
+    }
+
+    /* ─── CARD BASE ──────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border-g);
+      border-radius: var(--r);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ─── SETUP GRID ─────────────────────────────────────── */
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 24px;
+    }
+    @media(max-width:900px){ .setup-grid{ grid-template-columns: 1fr } }
+
+    /* ─── DROP ZONE ──────────────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed var(--border-g);
+      border-radius: var(--rs);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .25s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--gold);
+      background: rgba(184,134,11,.05);
+    }
+    .drop-zone.drag-over { transform: scale(1.01) }
+    .drop-zone.has-file {
+      border-color: var(--gold);
+      background: rgba(184,134,11,.06);
+    }
+    .dz-icon { font-size: 2.4rem; margin-bottom: 12px; display: block }
+    .dz-text { color: var(--text-s); font-size: .88rem; line-height: 1.6 }
+    .dz-text strong { color: var(--gold-xl); display: block; margin-bottom: 4px; font-size: .95rem }
+    .dz-hint { font-size: .74rem; color: var(--text-m); margin-top: 8px }
+    #fileInput { display: none }
+
+    /* Client preview */
+    .client-preview {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border-g);
+      border-radius: var(--rs);
+      padding: 16px;
+      position: relative;
+    }
+    .client-preview.hidden { display: none }
+    .client-name {
+      font-size: 1rem; font-weight: 800; color: var(--gold-xl);
+      margin-bottom: 10px; letter-spacing: .02em;
+    }
+    .client-tags { display: flex; flex-wrap: wrap; gap: 6px }
+    .client-tag {
+      background: rgba(184,134,11,.1);
+      border: 1px solid var(--border-g);
+      color: var(--text-s);
+      font-size: .72rem; padding: 3px 10px;
+      border-radius: 20px; font-weight: 600;
+    }
+    .client-raw {
+      margin-top: 12px; font-size: .72rem; color: var(--text-m);
+      max-height: 120px; overflow-y: auto; white-space: pre-wrap;
+    }
+    .btn-clear-client {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none; color: var(--text-m);
+      cursor: pointer; font-size: .9rem; line-height: 1;
+      transition: color .2s;
+    }
+    .btn-clear-client:hover { color: #e07070 }
+
+    /* ─── FORM ───────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid .full { grid-column: 1/-1 }
+    @media(max-width:600px){ .form-grid { grid-template-columns: 1fr } }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px }
+    .form-label {
+      font-size: .7rem; font-weight: 700;
+      color: var(--gold-l); text-transform: uppercase; letter-spacing: .08em;
+    }
+    .form-control {
+      background: var(--surface);
+      border: 1px solid var(--border-g);
+      color: var(--text); border-radius: var(--rs);
+      padding: 10px 13px; font-size: .86rem;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+      font-family: inherit; resize: vertical;
+    }
+    .form-control:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+    .form-control::placeholder { color: var(--text-m) }
+    select.form-control { cursor: pointer }
+    select.form-control option { background: var(--card) }
+
+    /* ─── GENERATE BTN ───────────────────────────────────── */
+    .generate-wrap { display: flex; justify-content: center; align-items: center; gap: 16px }
+    .btn-demo {
+      background: transparent;
+      border: 1.5px solid var(--gold);
+      color: var(--gold-l); cursor: pointer;
+      padding: 18px 28px; border-radius: 40px;
+      font-size: .88rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      transition: all .2s; white-space: nowrap;
+    }
+    .btn-demo:hover {
+      background: rgba(184,134,11,.1);
+      color: var(--gold-xl);
+      box-shadow: 0 0 20px rgba(184,134,11,.2);
+    }
+    .btn-generate {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, var(--gold) 0%, #9a6f09 50%, var(--gold-l) 100%);
+      border: 1px solid var(--gold);
+      color: #fff; cursor: pointer;
+      padding: 18px 64px;
+      border-radius: 40px;
+      font-size: 1rem; font-weight: 800;
+      letter-spacing: .1em; text-transform: uppercase;
+      transition: all .25s;
+      box-shadow: 0 0 30px var(--gold-glow), 0 4px 20px rgba(0,0,0,.4);
+      min-width: 280px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .btn-generate::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,.09) 50%, transparent 100%);
+      transform: translateX(-100%); transition: transform .5s;
+    }
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px var(--gold-glow), 0 8px 30px rgba(0,0,0,.5);
+    }
+    .btn-generate:hover::before { transform: translateX(100%) }
+    .btn-generate:active { transform: translateY(0) }
+    .btn-generate:disabled {
+      opacity: .6; cursor: not-allowed; transform: none; box-shadow: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    .btn-generate.loading .spinner { display: block }
+    .btn-generate.loading .btn-text::after { content: '...' }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    /* ─── OUTPUT SECTION ─────────────────────────────────── */
+    #outputSection { display: none }
+    #outputSection.visible { display: block }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    @media(max-width:1100px){ .output-grid { grid-template-columns: repeat(2,1fr) } }
+    @media(max-width:640px){ .output-grid { grid-template-columns: 1fr } }
+
+    /* Platform cards */
+    .platform-card {
+      background: var(--card);
+      border: 1px solid var(--border-g);
+      border-radius: var(--r);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .platform-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4), 0 0 20px rgba(184,134,11,.1);
+    }
+    .platform-bar { height: 3px }
+    .platform-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px 0;
+    }
+    .platform-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 900; letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+    .platform-name {
+      font-size: .92rem; font-weight: 700; color: var(--text); flex: 1;
+    }
+    .btn-copy-hdr {
+      background: none; border: 1px solid var(--border-g);
+      color: var(--text-s); cursor: pointer; font-size: .72rem;
+      padding: 4px 10px; border-radius: 20px; font-weight: 600;
+      transition: all .2s; white-space: nowrap;
+    }
+    .btn-copy-hdr:hover {
+      border-color: var(--gold); color: var(--gold-xl);
+      background: rgba(184,134,11,.08);
+    }
+    .btn-copy-hdr.copied { border-color: var(--gold); color: var(--gold-xl) }
+
+    .platform-body { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; gap: 12px }
+
+    .content-block { display: flex; flex-direction: column; gap: 5px }
+    .content-label {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-m);
+    }
+    .content-text {
+      font-size: .83rem; color: var(--text-s); line-height: 1.7;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .content-text.placeholder { color: var(--text-m); font-style: italic }
+    .hashtag-text { color: var(--gold-xl) !important; font-size: .78rem !important }
+
+    .platform-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-g);
+      display: flex; gap: 8px;
+    }
+    .btn-publish {
+      flex: 1; border: none; cursor: pointer;
+      padding: 9px 14px; border-radius: var(--rs);
+      font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .ig-btn { background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045); color: #fff }
+    .ig-btn:hover { opacity: .88; transform: scale(.98) }
+    .fb-btn { background: #1877f2; color: #fff }
+    .fb-btn:hover { background: #1568d3; transform: scale(.98) }
+    .wa-btn { background: #25d366; color: #fff }
+    .wa-btn:hover { background: #1db956; transform: scale(.98) }
+
+    /* ─── TOAST ──────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      background: var(--card);
+      border: 1px solid var(--border-g);
+      border-radius: var(--rs); padding: 12px 20px;
+      font-size: .84rem; font-weight: 600;
+      box-shadow: var(--shadow);
+      transform: translateY(20px); opacity: 0;
+      transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+      pointer-events: none; max-width: 320px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1 }
+    .toast.success { border-left: 3px solid var(--gold); color: var(--gold-xl) }
+    .toast.error { border-left: 3px solid #e05555; color: #e07070 }
+    .toast.info { border-left: 3px solid var(--gold); color: var(--gold-xl) }
+
+    /* ─── MISC ───────────────────────────────────────────── */
+    .hidden { display: none !important }
+
+    /* ─── APPROVAL MODULE ────────────────────────────────── */
+    .approval-send-card {
+      display: flex; align-items: center; gap: 18px;
+      background: linear-gradient(135deg, rgba(184,134,11,.1), rgba(184,134,11,.05));
+      border: 1px solid var(--border-g); border-radius: var(--r); padding: 20px 24px;
+    }
+    .approval-send-icon { font-size: 2rem; flex-shrink: 0 }
+    .approval-send-content { flex: 1 }
+    .approval-send-title { font-weight: 700; color: var(--text); margin-bottom: 4px }
+    .approval-send-desc { font-size: .8rem; color: var(--text-s) }
+    .btn-send-approval {
+      background: var(--gold);
+      border: none; color: #fff; cursor: pointer;
+      padding: 12px 24px; border-radius: var(--rs);
+      font-size: .86rem; font-weight: 700; white-space: nowrap;
+      transition: all .2s; flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(184,134,11,.35);
+    }
+    .btn-send-approval:hover {
+      background: var(--gold-l); transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(184,134,11,.45);
+    }
+
+    .approval-sent-card {
+      background: var(--card); border: 1px solid var(--gold);
+      border-radius: var(--r); padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 0 30px rgba(184,134,11,.1);
+    }
+    .approval-sent-header { display: flex; align-items: center; gap: 10px }
+    .approval-sent-icon { font-size: 1.4rem }
+    .approval-sent-title { font-size: 1rem; font-weight: 700; color: var(--gold-xl) }
+    .approval-code-display {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border-radius: var(--rs); padding: 14px 18px;
+      border: 1px dashed var(--border-g);
+    }
+    .approval-code-label {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--text-m);
+    }
+    .approval-code-value {
+      font-size: 2rem; font-weight: 900; letter-spacing: .3em;
+      color: var(--gold-xl); font-family: monospace;
+    }
+    .approval-link-row { display: flex; gap: 10px }
+    .approval-link-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border-g);
+      color: var(--text-s); border-radius: var(--rs); padding: 9px 12px;
+      font-size: .78rem; font-family: monospace; outline: none;
+    }
+    .btn-copy-link {
+      background: var(--surface); border: 1px solid var(--border-g);
+      color: var(--text-s); cursor: pointer; padding: 9px 16px;
+      border-radius: var(--rs); font-size: .8rem; font-weight: 700;
+      transition: all .2s; white-space: nowrap;
+    }
+    .btn-copy-link:hover { border-color: var(--gold); color: var(--gold-xl) }
+    .btn-copy-link.copied { border-color: var(--gold); color: var(--gold-xl) }
+    .approval-actions-row { display: flex; gap: 12px; flex-wrap: wrap }
+    .btn-wa-share {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #25d366; color: #fff; text-decoration: none;
+      padding: 10px 20px; border-radius: var(--rs);
+      font-size: .84rem; font-weight: 700; transition: all .2s;
+    }
+    .btn-wa-share:hover { background: #1db956; transform: translateY(-1px) }
+    .btn-preview-approval {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--surface); color: var(--text-s); text-decoration: none;
+      border: 1px solid var(--border-g); padding: 10px 20px; border-radius: var(--rs);
+      font-size: .84rem; font-weight: 700; transition: all .2s;
+    }
+    .btn-preview-approval:hover { border-color: var(--gold); color: var(--gold-xl) }
+    .approval-hint { font-size: .76rem; color: var(--text-m); padding-top: 4px }
+
+    /* ─── STATUS SECTION ─────────────────────────────────── */
+    .status-cards { display: flex; flex-direction: column; gap: 14px }
+    .status-card {
+      background: var(--card); border: 1px solid var(--border-g);
+      border-radius: var(--r); padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .status-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.4) }
+    .status-card-header { display: flex; align-items: flex-start; gap: 14px }
+    .status-card-left { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0 }
+    .status-code-badge {
+      background: var(--surface); border: 1px solid var(--border-g);
+      color: var(--gold-xl); font-family: monospace; font-weight: 900;
+      font-size: 1rem; letter-spacing: .15em; padding: 8px 12px;
+      border-radius: var(--rs); white-space: nowrap; flex-shrink: 0;
+    }
+    .status-card-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+    .status-client { font-size: .92rem; font-weight: 700; color: var(--text) }
+    .status-detail { font-size: .76rem; color: var(--text-m) }
+    .status-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0 }
+    .status-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .76rem; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; border: 1px solid; background: rgba(0,0,0,.25);
+      white-space: nowrap;
+    }
+    .status-timer { font-size: .74rem; color: var(--text-m) }
+    .status-timer.expired { color: #e07070 }
+    .status-progress-wrap {
+      background: var(--surface); border-radius: 4px; height: 6px; overflow: hidden;
+    }
+    .status-progress-bar {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-xl));
+      transition: width .5s ease;
+    }
+    .status-progress-label { font-size: .76rem; color: var(--text-s) }
+    .status-changes-box {
+      background: rgba(224,85,85,.07); border: 1px solid rgba(224,85,85,.22);
+      border-radius: var(--rs); padding: 12px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .status-changes-title {
+      font-size: .72rem; font-weight: 700; color: #e07070;
+      text-transform: uppercase; letter-spacing: .07em;
+    }
+    .status-change-item { display: flex; flex-direction: column; gap: 2px }
+    .status-change-net { font-size: .76rem; font-weight: 700; color: var(--text-s) }
+    .status-change-comment { font-size: .78rem; color: var(--text); font-style: italic }
+    .status-card-footer { display: flex; gap: 10px; align-items: center }
+    .btn-open-approval {
+      color: var(--gold-xl); text-decoration: none;
+      font-size: .78rem; font-weight: 700; padding: 6px 12px;
+      border-radius: var(--rs); border: 1px solid var(--border-g); transition: all .2s;
+    }
+    .btn-open-approval:hover { background: rgba(184,134,11,.1); border-color: var(--gold) }
+    .btn-delete-approval {
+      background: none; border: 1px solid transparent; color: var(--text-m);
+      cursor: pointer; font-size: .78rem; padding: 6px 12px;
+      border-radius: var(--rs); transition: all .2s;
+    }
+    .btn-delete-approval:hover { color: #e07070; border-color: rgba(224,85,85,.3) }
+
+    @media(max-width:640px) {
+      .approval-send-card { flex-direction: column; align-items: flex-start }
+      .status-card-header { flex-direction: column }
+      .status-right { align-items: flex-start }
+    }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--text-m); flex-shrink: 0;
+    }
+    .status-dot.active { background: var(--gold-xl) }
+
+    .no-client-warn {
+      background: rgba(184,134,11,.08);
+      border: 1px solid var(--border-g);
+      border-radius: var(--rs); padding: 12px 16px;
+      font-size: .8rem; color: var(--gold-l);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ══════════════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <img src="SYNKRO Fondo transparente Cuadrada.png" class="logo-img" alt="Synkro">
+    <button class="btn-apikey" id="apiKeyBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="8" cy="15" r="4"/><path d="m14.5 9-.5.5M17 7l1-1M11.5 11.5l5-5"/>
+      </svg>
+      API Key
+    </button>
+  </div>
+</header>
+
+<!-- ═══ API KEY MODAL ════════════════════════════════ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" title="Cerrar">✕</button>
+    <h3>🔑 Configurar API Key</h3>
+    <p>Tu clave de Anthropic. Se guarda solo en tu navegador (localStorage), nunca se envía a ningún servidor externo.</p>
+    <div class="field-group">
+      <label>Anthropic API Key</label>
+      <input type="password" id="apiKeyInput" class="field-input"
+        placeholder="sk-ant-api..." autocomplete="off">
+    </div>
+    <button class="btn-save" id="saveApiKey">Guardar clave</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═════════════════════════════════════════ -->
+<main>
+
+  <!-- Setup Row: Upload + Form -->
+  <div class="setup-grid">
+
+    <!-- JSON Upload Card -->
+    <div class="card">
+      <div class="section-title">Perfil del Cliente</div>
+      <div id="dropZone" class="drop-zone" title="Haz clic o arrastra tu JSON aquí">
+        <input type="file" id="fileInput" accept=".json,application/json">
+        <span class="dz-icon">📂</span>
+        <div class="dz-text">
+          <strong>Arrastra el JSON del cliente aquí</strong>
+          o haz clic para seleccionar archivo
+        </div>
+        <div class="dz-hint">Formato: .json — Nombre, industria, tono, redes, etc.</div>
+      </div>
+
+      <div id="clientPreview" class="client-preview hidden">
+        <button class="btn-clear-client" id="clearClientBtn" title="Eliminar cliente">✕</button>
+        <div class="client-name" id="clientName">—</div>
+        <div class="client-tags" id="clientTags"></div>
+        <pre class="client-raw" id="clientRaw"></pre>
+      </div>
+
+      <div class="no-client-warn hidden" id="noClientWarn">
+        ⚠️ Sin cliente cargado — la campaña será genérica.
+      </div>
+    </div>
+
+    <!-- Month Data Card -->
+    <div class="card">
+      <div class="section-title">Datos del Mes</div>
+      <form id="monthForm" class="form-grid" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label">Mes *</label>
+          <select id="fMes" class="form-control" required>
+            <option value="">Seleccionar...</option>
+            <option>Enero</option><option>Febrero</option><option>Marzo</option>
+            <option>Abril</option><option>Mayo</option><option>Junio</option>
+            <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+            <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Servicio Estrella *</label>
+          <input type="text" id="fServicio" class="form-control"
+            placeholder="Ej: Corte + color completo" required>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Promoción del Mes</label>
+          <input type="text" id="fPromocion" class="form-control"
+            placeholder="Ej: 20% OFF en tratamientos capilares todo el mes">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha Especial</label>
+          <input type="text" id="fFecha" class="form-control"
+            placeholder="Ej: Día de la Madre — 12 mayo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Objeción Frecuente</label>
+          <input type="text" id="fObjecion" class="form-control"
+            placeholder="Ej: Es muy caro para mí">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Pregunta Frecuente</label>
+          <input type="text" id="fPregunta" class="form-control"
+            placeholder="Ej: ¿Cuánto dura el tratamiento?">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Nota Especial para la IA</label>
+          <textarea id="fNota" class="form-control" rows="2"
+            placeholder="Contexto adicional, tono deseado, palabras clave, etc."></textarea>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Generate Button -->
+  <div class="generate-wrap">
+    <button class="btn-demo" id="demoBtn">⚡ Demo</button>
+    <button class="btn-generate" id="generateBtn">
+      <div class="spinner" id="spinner"></div>
+      <span class="btn-text" id="btnText">✦ Generar Campaña</span>
+    </button>
+  </div>
+
+  <!-- Output Section -->
+  <div id="outputSection">
+    <div class="section-title">Campaña Generada</div>
+    <div class="output-grid" id="outputGrid">
+
+      <!-- Instagram -->
+      <div class="platform-card" id="card-instagram">
+        <div class="platform-bar" style="background:linear-gradient(90deg,#833ab4,#fd1d1d,#fcb045)"></div>
+        <div class="platform-header">
+          <div class="platform-icon" style="background:linear-gradient(135deg,#833ab4,#fd1d1d);color:#fff">IG</div>
+          <span class="platform-name">Instagram</span>
+          <button class="btn-copy-hdr" data-platform="instagram">Copiar</button>
+        </div>
+        <div class="platform-body">
+          <div class="content-block">
+            <span class="content-label">Caption</span>
+            <div class="content-text placeholder" id="ig-caption">Genera una campaña para ver el contenido aquí.</div>
+          </div>
+          <div class="content-block">
+            <span class="content-label">Hashtags</span>
+            <div class="content-text hashtag-text placeholder" id="ig-hashtags">—</div>
+          </div>
+        </div>
+        <div class="platform-footer">
+          <button class="btn-publish ig-btn" data-platform="instagram">
+            📸 Abrir Instagram
+          </button>
+        </div>
+      </div>
+
+      <!-- Facebook -->
+      <div class="platform-card" id="card-facebook">
+        <div class="platform-bar" style="background:#1877f2"></div>
+        <div class="platform-header">
+          <div class="platform-icon" style="background:#1877f2;color:#fff">FB</div>
+          <span class="platform-name">Facebook</span>
+          <button class="btn-copy-hdr" data-platform="facebook">Copiar</button>
+        </div>
+        <div class="platform-body">
+          <div class="content-block">
+            <span class="content-label">Post</span>
+            <div class="content-text placeholder" id="fb-post">Genera una campaña para ver el contenido aquí.</div>
+          </div>
+        </div>
+        <div class="platform-footer">
+          <button class="btn-publish fb-btn" data-platform="facebook">
+            👥 Compartir en Facebook
+          </button>
+        </div>
+      </div>
+
+      <!-- WhatsApp Bot -->
+      <div class="platform-card" id="card-whatsapp">
+        <div class="platform-bar" style="background:#25d366"></div>
+        <div class="platform-header">
+          <div class="platform-icon" style="background:#25d366;color:#fff">WA</div>
+          <span class="platform-name">Bot WhatsApp — Automatización</span>
+          <button class="btn-copy-hdr" data-platform="whatsapp">Copiar</button>
+        </div>
+        <div class="platform-body">
+          <div class="content-block">
+            <span class="content-label">Bienvenida Automática</span>
+            <div class="content-text placeholder" id="wa-bienvenida">Genera una campaña para ver el flujo del bot aquí.</div>
+          </div>
+          <div class="content-block">
+            <span class="content-label">Menú Principal</span>
+            <div class="content-text placeholder" id="wa-menu">—</div>
+          </div>
+          <div class="content-block">
+            <span class="content-label">Respuestas Rápidas</span>
+            <div class="content-text placeholder" id="wa-respuestas">—</div>
+          </div>
+          <div class="content-block">
+            <span class="content-label">Secuencia Follow-Up</span>
+            <div class="content-text placeholder" id="wa-followup">—</div>
+          </div>
+          <div class="content-block">
+            <span class="content-label">Broadcast del Mes</span>
+            <div class="content-text placeholder" id="wa-broadcast">—</div>
+          </div>
+        </div>
+        <div class="platform-footer">
+          <button class="btn-publish wa-btn" data-platform="whatsapp">
+            💬 Abrir WhatsApp
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /output-grid -->
+  </div><!-- /outputSection -->
+
+</main>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
