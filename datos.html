@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eliminar mis datos — SYNKRO</title>
+  <meta name="description" content="Solicita la eliminación de tus datos personales de los sistemas de SYNKRO Tech.">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .delete-form-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    .delete-form-section h2 {
+      border-top: none !important;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: var(--ink); letter-spacing: 0.04em; margin-bottom: 0.4rem;
+    }
+    .form-input {
+      width: 100%; padding: 0.7rem 1rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--font-sans); font-size: 0.88rem;
+      color: var(--ink); background: var(--bg);
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--gold); }
+    .form-select {
+      width: 100%; padding: 0.7rem 1rem;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: var(--font-sans); font-size: 0.88rem;
+      color: var(--ink); background: var(--bg);
+      cursor: pointer;
+    }
+    .form-btn {
+      display: inline-block; background: var(--gold); color: #fff;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.85rem 2rem; border-radius: 2px; border: none; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .form-btn:hover { background: var(--cobalt); }
+    .status-note {
+      background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2);
+      border-left: 3px solid var(--gold); border-radius: 4px;
+      padding: 1rem 1.2rem; margin: 1.5rem 0;
+      font-size: 0.83rem; color: var(--muted); line-height: 1.7;
+    }
+    .step-row {
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 1rem 0; border-bottom: 1px solid var(--border);
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-n {
+      font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600;
+      color: var(--gold); min-width: 28px; margin-top: 2px;
+    }
+    .step-row p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  </style>
+</head>
+<body class="legal-body">
+
+  <nav class="legal-nav">
+    <img src="assets/logo-horizontal.png" alt="SYNKRO" class="legal-nav-logo" onerror="this.style.display='none'">
+    <a href="index.html" class="legal-nav-back">← Volver al sitio</a>
+  </nav>
+
+  <div class="legal-hero">
+    <div class="legal-hero-inner">
+      <span class="legal-badge">Privacidad</span>
+      <h1 class="legal-h1">Solicitar eliminación<br>de mis datos</h1>
+      <p class="legal-meta">En cumplimiento con la LFPDPPP y las políticas de plataformas de terceros</p>
+    </div>
+  </div>
+
+  <div class="legal-content">
+
+    <div class="status-note">
+      <strong>Tu derecho a la eliminación:</strong> De acuerdo con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y las políticas de Meta Platforms, tienes derecho a solicitar la eliminación de tus datos personales de nuestros sistemas. Procesamos tu solicitud en un máximo de <strong>30 días hábiles</strong>.
+    </div>
+
+    <h2>¿Qué datos puedes solicitar eliminar?</h2>
+    <ul>
+      <li>Información de contacto (nombre, correo, teléfono)</li>
+      <li>Historial de conversaciones y mensajes vía WhatsApp</li>
+      <li>Datos recopilados a través de nuestras integraciones con Meta (Facebook/Instagram)</li>
+      <li>Información de comportamiento y uso de nuestros servicios digitales</li>
+      <li>Cualquier otro dato personal almacenado en nuestros sistemas</li>
+    </ul>
+
+    <!-- FORMULARIO -->
+    <div class="delete-form-section">
+      <h2>Formulario de solicitud</h2>
+      <p style="margin-bottom:1.5rem">Completa este formulario y te contactaremos para confirmar tu identidad y procesar la solicitud.</p>
+
+      <form action="mailto:pedro.medellin@synkro.mx" method="POST" enctype="text/plain">
+        <div class="form-group">
+          <label class="form-label">Nombre completo *</label>
+          <input type="text" name="nombre" class="form-input" placeholder="Tu nombre completo" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo electrónico *</label>
+          <input type="email" name="email" class="form-input" placeholder="correo@ejemplo.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de WhatsApp o teléfono</label>
+          <input type="tel" name="telefono" class="form-input" placeholder="+52 442 000 0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">¿Qué datos deseas eliminar? *</label>
+          <select name="tipo" class="form-select" required>
+            <option value="">— Selecciona una opción —</option>
+            <option value="todos">Todos mis datos personales</option>
+            <option value="whatsapp">Conversaciones de WhatsApp</option>
+            <option value="meta">Datos de Facebook / Instagram</option>
+            <option value="email">Correos y comunicaciones</option>
+            <option value="otro">Otro (especificar abajo)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Información adicional</label>
+          <textarea name="detalle" class="form-input" rows="3" placeholder="Cualquier detalle adicional sobre tu solicitud..."></textarea>
+        </div>
+        <button type="submit" class="form-btn">Enviar solicitud de eliminación</button>
+      </form>
+    </div>
+
+    <h2>¿Prefieres contactarnos directamente?</h2>
+    <div class="step-row">
+      <span class="step-n">01</span>
+      <p>Envía un correo a <a href="mailto:pedro.medellin@synkro.mx"><strong>pedro.medellin@synkro.mx</strong></a> con el asunto: <em>"Solicitud de eliminación de datos"</em></p>
+    </div>
+    <div class="step-row">
+      <span class="step-n">02</span>
+      <p>Incluye tu nombre completo, el correo o teléfono con el que te registraste, y una descripción de los datos que deseas eliminar.</p>
+    </div>
+    <div class="step-row">
+      <span class="step-n">03</span>
+      <p>Te enviaremos una confirmación de recepción dentro de las primeras 24 horas hábiles.</p>
+    </div>
+    <div class="step-row">
+      <span class="step-n">04</span>
+      <p>Procesaremos y confirmaremos la eliminación en un plazo máximo de 30 días hábiles, conforme a la LFPDPPP.</p>
+    </div>
+
+    <h2>Nota sobre datos en plataformas de terceros</h2>
+    <p>
+      Algunos datos pueden estar alojados en plataformas de terceros (Meta, Google, WhatsApp Business API, Make). En esos casos, te orientaremos sobre el proceso específico para solicitar la eliminación directamente con cada plataforma, o gestionaremos la solicitud en tu nombre cuando tengamos acceso.
+    </p>
+    <p>
+      Para datos relacionados con Facebook o Instagram gestionados a través de la API de Meta, también puedes usar el <a href="https://www.facebook.com/help/contact/540977946302970" target="_blank">formulario oficial de eliminación de datos de Facebook</a>.
+    </p>
+
+  </div>
+
+  <footer class="legal-footer">
+    <p>© 2025 SYNKRO Tech · <a href="index.html">synkro.mx</a> · <a href="privacidad.html">Privacidad</a> · <a href="terminos.html">Términos</a></p>
+  </footer>
+
+</body>
+</html>
