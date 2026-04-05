@@ -436,7 +436,23 @@
   </div>
 </div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
 <script>
+// ── Firebase init ──────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            'AIzaSyBc50nnVPUFuiNxyyvaPur39BCiCRn1j1o',
+  authDomain:        'synkro-app-9daf6.firebaseapp.com',
+  databaseURL:       'https://synkro-app-9daf6-default-rtdb.firebaseio.com',
+  projectId:         'synkro-app-9daf6',
+  storageBucket:     'synkro-app-9daf6.firebasestorage.app',
+  messagingSenderId: '625963873871',
+  appId:             '1:625963873871:web:7612e0dbcb0e9c07861c3a',
+});
+const db = firebase.database();
+
 // ── Bootstrap ──────────────────────────────────────────────────────────────
 const params  = new URLSearchParams(window.location.search);
 const CODE    = (params.get('code') || '').toUpperCase().trim();
@@ -447,17 +463,19 @@ let   timerRef  = null;
 function init() {
   if (!CODE) return showError('Sin código', 'No se proporcionó un código de campaña en la URL.');
 
-  const raw = localStorage.getItem(`synkro_approval_${CODE}`);
-  if (!raw)  return showError('Campaña no encontrada',
-    `No existe una campaña con el código <strong>${escH(CODE)}</strong>.<br><br>
-     Verifica que el link sea correcto o pide uno nuevo a tu agencia.`);
-
-  try { data = JSON.parse(raw); }
-  catch { return showError('Error de datos', 'Los datos de la campaña están corruptos.'); }
-
-  renderPage();
-  startCountdown();
-  checkAllApproved();
+  db.ref('campaigns/' + CODE).once('value')
+    .then(snap => {
+      if (!snap.exists()) {
+        return showError('Campaña no encontrada',
+          `No existe una campaña con el código <strong>${escH(CODE)}</strong>.<br><br>
+           Verifica que el link sea correcto o pide uno nuevo a tu agencia.`);
+      }
+      data = snap.val();
+      renderPage();
+      startCountdown();
+      checkAllApproved();
+    })
+    .catch(() => showError('Error de conexión', 'No se pudo cargar la campaña. Verifica tu conexión e intenta de nuevo.'));
 }
 
 // ── Render principal ───────────────────────────────────────────────────────
@@ -718,7 +736,8 @@ function approveAllPending() {
 
 function saveData() {
   data.lastUpdated = Date.now();
-  localStorage.setItem(`synkro_approval_${CODE}`, JSON.stringify(data));
+  db.ref('campaigns/' + CODE).set(data)
+    .catch(err => console.error('Firebase save error:', err));
 }
 
 // ── Progress ───────────────────────────────────────────────────────────────

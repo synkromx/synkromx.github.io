@@ -27,9 +27,23 @@ const PROMPT_LABELS = {
   googleBusiness:         'Google Business Profile',
 };
 
+// ── Firebase ───────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            'AIzaSyBc50nnVPUFuiNxyyvaPur39BCiCRn1j1o',
+  authDomain:        'synkro-app-9daf6.firebaseapp.com',
+  databaseURL:       'https://synkro-app-9daf6-default-rtdb.firebaseio.com',
+  projectId:         'synkro-app-9daf6',
+  storageBucket:     'synkro-app-9daf6.firebasestorage.app',
+  messagingSenderId: '625963873871',
+  appId:             '1:625963873871:web:7612e0dbcb0e9c07861c3a',
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 // ── State ──────────────────────────────────────────────────────────────────
-let clientData   = null;
-let campaignData = null;
+let clientData     = null;
+let campaignData   = null;
+let cachedSessions = [];
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -1369,11 +1383,12 @@ function handleSendForApproval() {
   }
   const code = generateApprovalCode();
   const data = buildApprovalData(code);
-  localStorage.setItem(`synkro_approval_${code}`, JSON.stringify(data));
-
-  showApprovalLinkPanel(code);
-  renderStatusSection();
-  showToast(`✓ Link generado — código: ${code}`, 'success');
+  db.ref('campaigns/' + code).set(data)
+    .then(() => {
+      showApprovalLinkPanel(code);
+      showToast(`✓ Link generado — código: ${code}`, 'success');
+    })
+    .catch(err => showToast('Error guardando campaña: ' + err.message, 'error'));
 }
 
 function showApprovalLinkPanel(code) {
@@ -1426,21 +1441,16 @@ function initStatusSection() {
   main.appendChild(section);
   renderStatusSection();
 
-  // Refresco en tiempo real cuando approval.html modifica localStorage
-  window.addEventListener('storage', e => {
-    if (e.key && e.key.startsWith('synkro_approval_')) renderStatusSection();
+  // Refresco en tiempo real vía Firebase Realtime Database
+  db.ref('campaigns').on('value', snap => {
+    const val = snap.val() || {};
+    cachedSessions = Object.values(val).sort((a, b) => b.createdAt - a.createdAt);
+    renderStatusSection();
   });
 }
 
 function getApprovalSessions() {
-  const sessions = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('synkro_approval_')) {
-      try { sessions.push(JSON.parse(localStorage.getItem(key))); } catch { /* */ }
-    }
-  }
-  return sessions.sort((a, b) => b.createdAt - a.createdAt);
+  return cachedSessions;
 }
 
 function computeOverallStatus(approvals) {
@@ -1531,8 +1541,8 @@ function renderStatusSection() {
 
     card.querySelector('.btn-delete-approval').addEventListener('click', function () {
       if (confirm(`¿Eliminar sesión de aprobación ${this.dataset.code}?`)) {
-        localStorage.removeItem(`synkro_approval_${this.dataset.code}`);
-        renderStatusSection();
+        db.ref('campaigns/' + this.dataset.code).remove()
+          .catch(err => showToast('Error eliminando: ' + err.message, 'error'));
       }
     });
 
