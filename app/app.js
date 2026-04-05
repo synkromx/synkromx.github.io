@@ -223,15 +223,18 @@ async function generateCampaign() {
 
   if (!clientData) noClientWarn.classList.remove('hidden');
 
-  const pkg     = detectPackage(clientData);
-  const prompts = PACKAGE_PROMPTS[pkg];
-  const total   = prompts.length;
-  const month   = getMonthData();
-
-  setLoading(true, `Motor Synkro · Paquete ${pkg} · 0/${total}`);
-  campaignData = { _package: pkg };
+  setLoading(true, 'Motor Synkro — preparando...');
+  campaignData = null;
 
   try {
+    const pkg     = detectPackage(clientData);
+    const prompts = PACKAGE_PROMPTS[pkg];
+    const total   = prompts.length;
+    const month   = getMonthData();
+
+    setLoading(true, `Motor Synkro · Paquete ${pkg} · 0/${total}`);
+    campaignData = { _package: pkg };
+
     // ── Prompt 1: Maestro ──────────────────────────────────────────────────
     setLoading(true, `1/${total} — ${PROMPT_LABELS.maestro}`);
     const maestroRaw  = await callClaude(apiKey, buildMaestroPrompt(clientData, month), 2048);
@@ -280,7 +283,7 @@ async function generateCampaign() {
 
 function detectPackage(data) {
   if (!data) return 'starter';
-  const raw = (
+  const raw = String(
     data.paquete || data.negocio?.paquete || data.identidad?.paquete || ''
   ).toLowerCase();
   if (raw.includes('premium'))                         return 'premium';
