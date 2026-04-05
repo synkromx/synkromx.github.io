@@ -110,7 +110,9 @@ function setupDragDrop() {
 }
 
 function processFile(file) {
-  if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+  const validExt  = file.name.toLowerCase().endsWith('.json');
+  const validMime = ['application/json', 'text/json'].includes(file.type);
+  if (!validExt && !validMime) {
     showToast('Por favor carga un archivo .json válido', 'error');
     return;
   }
