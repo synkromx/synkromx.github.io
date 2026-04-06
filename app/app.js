@@ -266,7 +266,7 @@ async function generateCampaign() {
       const raw = await callClaude(
         apiKey,
         buildPromptFor(pName, clientData, month, campaignData),
-        ['reelTestimonialProceso', 'calendarioPublicacion'].includes(pName) ? 4096 : 3000
+        pName === 'calendarioPublicacion' ? 8192 : pName === 'reelTestimonialProceso' ? 4096 : 3000
       );
       campaignData[pName] = extractJson(raw.content[0].text);
     }
@@ -1525,8 +1525,9 @@ function generateApprovalCode() {
 
 // ── URL relativa a approval.html ───────────────────────────────────────────
 function getApprovalUrl(code) {
-  const href = window.location.href;
-  const base = href.substring(0, href.lastIndexOf('/') + 1);
+  const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? `${window.location.origin}/app/`
+    : 'https://synkromx.github.io/app/';
   return `${base}approval.html?code=${code}`;
 }
 
