@@ -395,6 +395,43 @@
     .content-text.placeholder { color: var(--text-m); font-style: italic }
     .hashtag-text { color: var(--gold-xl) !important; font-size: .78rem !important }
 
+    /* ─── CALENDAR TABLE ────────────────────────────────── */
+    .cal-week { margin-bottom: 22px }
+    .cal-week:last-child { margin-bottom: 0 }
+    .cal-week-label {
+      font-size: .68rem; font-weight: 800; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--gold-l);
+      margin-bottom: 10px;
+    }
+    .cal-week-range { color: var(--text-m); font-weight: 600; text-transform: none; letter-spacing: 0 }
+    .cal-table-wrap { overflow-x: auto; border-radius: var(--rs); border: 1px solid var(--border-g) }
+    .cal-table {
+      width: 100%; border-collapse: collapse; font-size: .78rem; min-width: 480px;
+    }
+    .cal-table th {
+      background: var(--surface);
+      color: var(--gold-l);
+      font-size: .63rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+      padding: 8px 12px; text-align: left; white-space: nowrap;
+      border-bottom: 1px solid var(--border-g);
+    }
+    .cal-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(184,134,11,.07);
+      color: var(--text-s); vertical-align: middle;
+    }
+    .cal-table tr:last-child td { border-bottom: none }
+    .cal-table tbody tr:hover td { background: rgba(184,134,11,.04) }
+    .cal-net-badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: .66rem; font-weight: 800; color: #fff; white-space: nowrap;
+    }
+    .cal-day  { color: var(--text); font-weight: 700; white-space: nowrap }
+    .cal-time { color: var(--gold-xl); font-weight: 700; white-space: nowrap; font-family: 'Courier New', monospace; font-size: .82rem }
+    .cal-num  { color: var(--text-m); font-size: .72rem; font-weight: 700 }
+    .cal-desc { color: var(--text-s); font-size: .79rem }
+
     .platform-footer {
       padding: 14px 20px;
       border-top: 1px solid var(--border-g);

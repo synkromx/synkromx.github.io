@@ -9,9 +9,9 @@
 
 // ── Package Config ─────────────────────────────────────────────────────────
 const PACKAGE_PROMPTS = {
-  starter:     ['maestro', 'posts', 'reelEducativo'],
-  profesional: ['maestro', 'posts', 'reelEducativo', 'reelEmpatia', 'botWhatsapp', 'pautaMeta'],
-  premium:     ['maestro', 'posts', 'reelEducativo', 'reelEmpatia', 'reelTestimonialProceso', 'botWhatsapp', 'pautaMeta', 'googleBusiness'],
+  starter:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo'],
+  profesional: ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'botWhatsapp', 'pautaMeta'],
+  premium:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'reelTestimonialProceso', 'botWhatsapp', 'pautaMeta', 'googleBusiness'],
 };
 
 const POSTS_COUNT = { starter: 8, profesional: 16, premium: 20 };
@@ -19,6 +19,8 @@ const POSTS_COUNT = { starter: 8, profesional: 16, premium: 20 };
 const PROMPT_LABELS = {
   maestro:                'Brief Maestro',
   posts:                  'Posts Multicanal',
+  estrategiaCampana:      'Estrategia de Campaña',
+  calendarioPublicacion:  'Calendario de Publicación',
   reelEducativo:          'Reel Educativo',
   reelEmpatia:            'Reel Empatía',
   reelTestimonialProceso: 'Reels Testimonial + Proceso',
@@ -264,7 +266,7 @@ async function generateCampaign() {
       const raw = await callClaude(
         apiKey,
         buildPromptFor(pName, clientData, month, campaignData),
-        pName === 'reelTestimonialProceso' ? 4096 : 3000
+        ['reelTestimonialProceso', 'calendarioPublicacion'].includes(pName) ? 4096 : 3000
       );
       campaignData[pName] = extractJson(raw.content[0].text);
     }
@@ -722,10 +724,109 @@ Responde ÚNICAMENTE con JSON válido:
 }`;
 }
 
+// ── PROMPT: Estrategia de Campaña ─────────────────────────────────────────
+function buildEstrategiaPrompt(client, month, maestro) {
+  return `Eres el estratega de contenido del Motor Synkro. Con base en el brief maestro y los datos del mes, crea la ESTRATEGIA DE CAMPAÑA completa que guiará cada decisión de contenido.
+
+## BRIEF MAESTRO
+\`\`\`json
+${JSON.stringify(maestro, null, 2)}
+\`\`\`
+
+## PERFIL DEL CLIENTE
+${clientJson(client)}
+
+${monthSection(month)}
+
+Responde ÚNICAMENTE con JSON válido:
+
+{
+  "anguloNarrativo": "El ángulo central de toda la campaña — la historia que conecta todos los contenidos del mes en 2-3 líneas",
+  "mensajeClave": "La frase o idea que debe quedar grabada en la mente del cliente ideal después de ver el contenido del mes",
+  "emocionPrincipal": "La emoción dominante que debe sentir la audiencia al consumir el contenido",
+  "propuestaValor": "Por qué elegir este negocio sobre la competencia — beneficio emocional + racional en 2-3 líneas",
+  "tono": "3-5 adjetivos que definen cómo comunicar: ej. 'cercano, experto, optimista, directo, con humor sutil'",
+  "pilaresDeContenido": [
+    { "pilar": "Nombre del pilar", "descripcion": "Qué tipo de contenido abarca y por qué es estratégico", "porcentaje": "35%" },
+    { "pilar": "...", "descripcion": "...", "porcentaje": "..." },
+    { "pilar": "...", "descripcion": "...", "porcentaje": "..." }
+  ],
+  "enfoquesSemana": [
+    { "semana": "Semana 1", "enfoque": "Qué tema o emoción domina esta semana y por qué" },
+    { "semana": "Semana 2", "enfoque": "..." },
+    { "semana": "Semana 3", "enfoque": "..." },
+    { "semana": "Semana 4", "enfoque": "..." }
+  ],
+  "doYDont": {
+    "do":   ["Sí hacer 1", "Sí hacer 2", "Sí hacer 3"],
+    "dont": ["No hacer 1", "No hacer 2", "No hacer 3"]
+  }
+}`;
+}
+
+// ── PROMPT: Calendario de Publicación ─────────────────────────────────────
+function buildCalendarioPrompt(client, month, maestro, posts, pkg) {
+  const igCount = (posts?.instagram || []).length;
+  const fbCount = (posts?.facebook  || []).length;
+  const tkCount = (posts?.tiktok    || []).length;
+
+  return `Eres el planificador de contenido del Motor Synkro. Crea el CALENDARIO DE PUBLICACIÓN mensual óptimo para máximo alcance e interacción.
+
+## BRIEF MAESTRO
+\`\`\`json
+${JSON.stringify(maestro, null, 2)}
+\`\`\`
+
+## PERFIL DEL CLIENTE
+${clientJson(client)}
+
+${monthSection(month)}
+
+## POSTS A PROGRAMAR
+- Instagram: ${igCount} posts
+- Facebook:  ${fbCount} posts
+- TikTok:    ${tkCount} posts
+
+## REGLAS DE PROGRAMACIÓN
+- Instagram: mejores horarios 7-9am, 11am-1pm, 7-9pm — L-V más efectivo para negocios
+- Facebook: mejores horarios 9-10am, 12-2pm, 6-8pm — Miércoles y Jueves mayor engagement
+- TikTok: mejores horarios 7-9am, 12-3pm, 7-11pm — Martes, Jueves y Viernes para negocios
+- Distribuir posts de forma equilibrada a lo largo del mes
+- Nunca publicar en las 3 redes el mismo día a la misma hora
+- Dejar al menos 1 día entre posts de la misma red
+
+Responde ÚNICAMENTE con JSON válido. Genera exactamente 4 objetos en "semanas":
+
+{
+  "semanas": [
+    {
+      "semana": "Semana 1",
+      "rango": "Días 1-7",
+      "publicaciones": [
+        { "dia": "Lunes", "fecha": "1", "hora": "19:00", "red": "instagram", "numero": 1, "descripcion": "Tema o gancho breve del post" },
+        { "dia": "Miércoles", "fecha": "3", "hora": "20:00", "red": "facebook", "numero": 1, "descripcion": "Tema o gancho breve del post" },
+        { "dia": "Viernes", "fecha": "5", "hora": "18:00", "red": "tiktok", "numero": 1, "descripcion": "Tema o gancho breve del post" }
+      ]
+    },
+    { "semana": "Semana 2", "rango": "Días 8-14", "publicaciones": [ ] },
+    { "semana": "Semana 3", "rango": "Días 15-21", "publicaciones": [ ] },
+    { "semana": "Semana 4", "rango": "Días 22-30", "publicaciones": [ ] }
+  ],
+  "mejoresHorarios": {
+    "instagram": "Horario óptimo personalizado para este nicho + justificación breve",
+    "facebook":  "Horario óptimo + justificación",
+    "tiktok":    "Horario óptimo + justificación"
+  },
+  "notas": "Observación estratégica — festividades del mes, semana de mayor conversión, etc."
+}`;
+}
+
 // ── Prompt dispatcher ──────────────────────────────────────────────────────
 function buildPromptFor(name, client, month, campaign) {
   const m = campaign.maestro;
   switch (name) {
+    case 'estrategiaCampana':        return buildEstrategiaPrompt(client, month, m);
+    case 'calendarioPublicacion':    return buildCalendarioPrompt(client, month, m, campaign.posts, campaign._package);
     case 'reelEducativo':            return buildReelEducativoPrompt(client, month, m);
     case 'reelEmpatia':              return buildReelEmpatiaPrompt(client, month, m);
     case 'reelTestimonialProceso':   return buildReelTestimonialProcesoPrompt(client, month, m);
@@ -859,7 +960,9 @@ function renderCampaign(data) {
   if (titleEl) titleEl.textContent = `Motor Synkro — Paquete ${pkgLabel[pkg] || pkg}`;
 
   if (data.maestro)              grid.appendChild(buildMaestroCard(data.maestro));
+  if (data.estrategiaCampana)    grid.appendChild(buildEstrategiaCard(data.estrategiaCampana));
   if (data.posts)                grid.appendChild(buildPostsSection(data.posts, pkg));
+  if (data.calendarioPublicacion) grid.appendChild(buildCalendarioCard(data.calendarioPublicacion));
   if (data.reelEducativo)        grid.appendChild(buildReelCard('Reel Educativo', 'Posicionamiento como experto', data.reelEducativo, 'ig'));
   if (data.reelEmpatia)          grid.appendChild(buildReelCard('Reel Empatía', 'Conexión emocional con la audiencia', data.reelEmpatia, 'em'));
 
@@ -1220,6 +1323,113 @@ function buildGoogleCard(gb) {
     bodyHtml,
     () => JSON.stringify(gb, null, 2)
   );
+}
+
+// Estrategia de Campaña card
+function buildEstrategiaCard(e) {
+  let bodyHtml = '';
+  bodyHtml += block('Ángulo Narrativo', e.anguloNarrativo);
+  bodyHtml += block('Mensaje Clave', e.mensajeClave);
+  bodyHtml += block('Emoción Principal', e.emocionPrincipal);
+  bodyHtml += block('Propuesta de Valor', e.propuestaValor);
+  bodyHtml += block('Tono de Comunicación', e.tono);
+
+  if (Array.isArray(e.pilaresDeContenido)) {
+    const pilares = e.pilaresDeContenido
+      .map(p => `${p.pilar} (${p.porcentaje})\n${p.descripcion}`)
+      .join('\n\n');
+    bodyHtml += block('Pilares de Contenido', pilares);
+  }
+
+  if (Array.isArray(e.enfoquesSemana)) {
+    const semanas = e.enfoquesSemana
+      .map(s => `${s.semana}: ${s.enfoque}`)
+      .join('\n');
+    bodyHtml += block('Enfoque por Semana', semanas);
+  }
+
+  if (e.doYDont) {
+    if (Array.isArray(e.doYDont.do))   bodyHtml += block('✓ Sí Hacer', e.doYDont.do.map(d => `• ${d}`).join('\n'));
+    if (Array.isArray(e.doYDont.dont)) bodyHtml += block('✗ No Hacer', e.doYDont.dont.map(d => `• ${d}`).join('\n'));
+  }
+
+  return makeCard(
+    'linear-gradient(90deg, #7c3aed, var(--gold))',
+    'linear-gradient(135deg, #7c3aed, #5b21b6)',
+    '◈',
+    'Estrategia de Campaña',
+    bodyHtml,
+    () => [e.anguloNarrativo, e.mensajeClave, e.propuestaValor, e.tono].filter(Boolean).join('\n\n')
+  );
+}
+
+// Calendario de Publicación card (full-width)
+function buildCalendarioCard(cal) {
+  const netIcons  = { instagram: '📷 IG', facebook: '👥 FB', tiktok: '🎵 TK' };
+  const netColors = { instagram: '#833ab4', facebook: '#1877f2', tiktok: '#e4001b' };
+
+  let calHtml = '';
+  if (Array.isArray(cal.semanas)) {
+    cal.semanas.forEach(sem => {
+      if (!Array.isArray(sem.publicaciones) || !sem.publicaciones.length) return;
+      calHtml += `
+        <div class="cal-week">
+          <div class="cal-week-label">${escHtml(sem.semana)}<span class="cal-week-range"> · ${escHtml(sem.rango || '')}</span></div>
+          <div class="cal-table-wrap">
+            <table class="cal-table">
+              <thead><tr><th>Día</th><th>Hora</th><th>Red</th><th>#</th><th>Contenido</th></tr></thead>
+              <tbody>
+                ${sem.publicaciones.map(p => `
+                  <tr>
+                    <td class="cal-day">${escHtml(p.dia || '')} ${escHtml(String(p.fecha || ''))}</td>
+                    <td class="cal-time">${escHtml(p.hora || '')}</td>
+                    <td><span class="cal-net-badge" style="background:${netColors[p.red] || '#555'}">${escHtml(netIcons[p.red] || p.red)}</span></td>
+                    <td class="cal-num">${escHtml(String(p.numero || ''))}</td>
+                    <td class="cal-desc">${escHtml(p.descripcion || '')}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    });
+  }
+
+  let footerHtml = '';
+  if (cal.mejoresHorarios) {
+    const h = cal.mejoresHorarios;
+    footerHtml += block('Mejores Horarios Personalizados', [
+      h.instagram ? `📷 Instagram: ${h.instagram}` : '',
+      h.facebook  ? `👥 Facebook: ${h.facebook}`   : '',
+      h.tiktok    ? `🎵 TikTok: ${h.tiktok}`       : '',
+    ].filter(Boolean).join('\n'));
+  }
+  if (cal.notas) footerHtml += block('Notas Estratégicas', cal.notas);
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'grid-column: 1/-1;';
+  wrapper.innerHTML = `
+    <div class="platform-card" style="overflow:visible">
+      <div class="platform-bar" style="background:linear-gradient(90deg,#7c3aed,#1877f2,#e4001b)"></div>
+      <div class="platform-header">
+        <div class="platform-icon" style="background:linear-gradient(135deg,#7c3aed,#1877f2);color:#fff;font-size:1rem">📅</div>
+        <span class="platform-name">Calendario de Publicación</span>
+        <button type="button" class="btn-copy-hdr synkro-cal-copy">Copiar JSON</button>
+      </div>
+      <div class="platform-body" style="gap:20px">
+        ${calHtml}
+        ${footerHtml}
+      </div>
+    </div>`;
+
+  wrapper.querySelector('.synkro-cal-copy').addEventListener('click', function () {
+    const text = JSON.stringify(cal, null, 2);
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    this.textContent = '✓ Copiado';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Copiar JSON'; this.classList.remove('copied'); }, 2000);
+  });
+
+  return wrapper;
 }
 
 // ── Loading State ──────────────────────────────────────────────────────────
