@@ -46,6 +46,46 @@
     ::-webkit-scrollbar-track{background:var(--surface)}
     ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
 
+    /* ─── ADMIN SECTION (solo Pedro) ─────────────── */
+    .admin-section {
+      margin-top: 40px;
+      border: 2px solid rgba(124,58,237,.35);
+      border-radius: var(--r); overflow: hidden;
+    }
+    .admin-badge {
+      background: rgba(124,58,237,.15);
+      border-bottom: 1px solid rgba(124,58,237,.3);
+      padding: 8px 20px;
+      font-size: .65rem; font-weight: 800; letter-spacing: .12em;
+      text-transform: uppercase; color: #a78bfa;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .admin-section-title {
+      padding: 16px 20px 12px;
+      font-size: 1rem; font-weight: 800; color: var(--text);
+    }
+    .fp-table-wrap { overflow-x: auto; padding: 0 20px 20px }
+    .fp-table { width: 100%; border-collapse: collapse; font-size: .76rem; min-width: 700px }
+    .fp-table th {
+      background: rgba(124,58,237,.1); color: #a78bfa;
+      font-size: .62rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+      padding: 8px 12px; text-align: left; white-space: nowrap;
+      border-bottom: 1px solid rgba(124,58,237,.2);
+    }
+    .fp-table td {
+      padding: 10px 12px; border-bottom: 1px solid rgba(124,58,237,.08);
+      color: var(--text-s); vertical-align: top; line-height: 1.5;
+    }
+    .fp-table tr:last-child td { border-bottom: none }
+    .fp-table tbody tr:hover td { background: rgba(124,58,237,.05) }
+    .fp-tipo { color: var(--text); font-weight: 700; white-space: nowrap }
+    .fp-size { color: var(--text-m); font-size: .68rem }
+    .fp-notas {
+      margin: 0 20px 20px; padding: 14px;
+      background: rgba(124,58,237,.08); border: 1px solid rgba(124,58,237,.2);
+      border-radius: var(--rs); font-size: .78rem; color: var(--text-s); line-height: 1.6;
+    }
+
     /* ─── HEADER ──────────────────────────────────── */
     .a-header {
       background: rgba(15,40,71,.92);
@@ -454,9 +494,10 @@ firebase.initializeApp({
 const db = firebase.database();
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────
-const params  = new URLSearchParams(window.location.search);
-const CODE    = (params.get('code') || '').toUpperCase().trim();
-let   data    = null;
+const params    = new URLSearchParams(window.location.search);
+const CODE      = (params.get('code') || '').toUpperCase().trim();
+const IS_ADMIN  = params.get('admin') === '1';
+let   data      = null;
 let   activeNet = 'instagram';
 let   timerRef  = null;
 
@@ -489,6 +530,7 @@ function renderPage() {
     ${buildTabs(nets)}
     <div class="a-main">
       <div class="a-posts-grid" id="postsGrid"></div>
+      ${IS_ADMIN && data.fichaProduccion ? buildAdminFichaSection(data.fichaProduccion) : ''}
     </div>
     ${buildFooter()}
   `;
@@ -507,6 +549,41 @@ function renderPage() {
 
   renderPostsGrid();
   updateProgress();
+}
+
+function buildAdminFichaSection(ficha) {
+  if (!ficha || !Array.isArray(ficha.piezas)) return '';
+  const rows = ficha.piezas.map(p => `
+    <tr>
+      <td class="fp-tipo">${escH(p.tipoPieza || '')}</td>
+      <td>${escH(p.formato || '')}<br><span class="fp-size">${escH(p.tamano || '')}</span></td>
+      <td>${escH(p.elementosVisuales || '')}</td>
+      <td>${escH(p.templateRecomendado || '')}</td>
+      <td>${escH(p.musicaRitmo || '')}</td>
+      <td>${escH(p.accionCanva || '')}</td>
+    </tr>`).join('');
+  return `
+    <div class="admin-section">
+      <div class="admin-badge">🔒 Solo Pedro — Referencia Interna de Producción</div>
+      <div class="admin-section-title">Ficha de Producción Visual</div>
+      <div class="fp-table-wrap">
+        <table class="fp-table">
+          <thead>
+            <tr>
+              <th>Tipo de Pieza</th>
+              <th>Formato / Tamaño</th>
+              <th>Elementos Visuales</th>
+              <th>Template Canva</th>
+              <th>Música / Ritmo</th>
+              <th>Acción en Canva</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${ficha.notasGenerales ? `<div class="fp-notas">${escH(ficha.notasGenerales)}</div>` : ''}
+    </div>
+  `;
 }
 
 function buildHeader() {

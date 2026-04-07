@@ -432,6 +432,76 @@
     .cal-num  { color: var(--text-m); font-size: .72rem; font-weight: 700 }
     .cal-desc { color: var(--text-s); font-size: .79rem }
 
+    /* ─── PRODUCTION TABLE ───────────────────────────── */
+    .fp-table-wrap { overflow-x: auto; border-radius: var(--rs); border: 1px solid var(--border-g) }
+    .fp-table { width: 100%; border-collapse: collapse; font-size: .76rem; min-width: 700px }
+    .fp-table th {
+      background: var(--surface); color: var(--gold-l);
+      font-size: .63rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+      padding: 8px 12px; text-align: left; white-space: nowrap;
+      border-bottom: 1px solid var(--border-g);
+    }
+    .fp-table td {
+      padding: 10px 12px; border-bottom: 1px solid rgba(184,134,11,.07);
+      color: var(--text-s); vertical-align: top; line-height: 1.5;
+    }
+    .fp-table tr:last-child td { border-bottom: none }
+    .fp-table tbody tr:hover td { background: rgba(184,134,11,.04) }
+    .fp-tipo { color: var(--text); font-weight: 700; white-space: nowrap }
+    .fp-size { color: var(--text-m); font-size: .68rem }
+    .fp-notas {
+      margin: 16px 20px 0;
+      padding: 14px; background: rgba(14,165,233,.06);
+      border: 1px solid rgba(14,165,233,.2); border-radius: var(--rs);
+      font-size: .78rem; color: var(--text-s); line-height: 1.6;
+    }
+
+    /* ─── EXPORTS CARD ───────────────────────────────── */
+    .exports-card { background: linear-gradient(135deg,rgba(184,134,11,.07),rgba(232,185,35,.04)) }
+    .exports-header { background: linear-gradient(135deg,rgba(184,134,11,.14),rgba(232,185,35,.07)) }
+    .exports-saved-badge {
+      margin-left: auto; font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+      color: var(--gold-xl); background: rgba(184,134,11,.15);
+      border: 1px solid rgba(184,134,11,.3); border-radius: 20px;
+      padding: 3px 12px; white-space: nowrap;
+    }
+    .exports-body { gap: 14px !important }
+    .exports-desc { font-size: .82rem; color: var(--text-m) }
+    .exports-btns {
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+    .btn-export {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 18px; border-radius: var(--rs); border: 1px solid;
+      cursor: pointer; transition: all .18s; text-align: left;
+      min-width: 190px; flex: 1;
+    }
+    .btn-export-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0 }
+    .btn-export-text { display: flex; flex-direction: column; gap: 2px }
+    .btn-export-label { font-size: .84rem; font-weight: 700; color: var(--text) }
+    .btn-export-sub   { font-size: .68rem; font-weight: 600; letter-spacing: .04em; opacity: .8 }
+    .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.25) }
+    .btn-export-pdf {
+      background: rgba(184,134,11,.12); border-color: rgba(184,134,11,.35); color: var(--gold-xl);
+    }
+    .btn-export-pdf:hover { background: rgba(184,134,11,.2) }
+    .btn-export-pdf .btn-export-sub { color: var(--gold-l) }
+    .btn-export-json {
+      background: rgba(99,102,241,.1); border-color: rgba(99,102,241,.3); color: #a5b4fc;
+    }
+    .btn-export-json:hover { background: rgba(99,102,241,.18) }
+    .btn-export-json .btn-export-sub { color: #818cf8 }
+    .btn-export-wa {
+      background: rgba(37,211,102,.1); border-color: rgba(37,211,102,.3); color: #4ade80;
+    }
+    .btn-export-wa:hover { background: rgba(37,211,102,.18) }
+    .btn-export-wa .btn-export-sub { color: #22c55e }
+    .btn-export-cal {
+      background: rgba(14,165,233,.1); border-color: rgba(14,165,233,.3); color: #7dd3fc;
+    }
+    .btn-export-cal:hover { background: rgba(14,165,233,.18) }
+    .btn-export-cal .btn-export-sub { color: #38bdf8 }
+
     .platform-footer {
       padding: 14px 20px;
       border-top: 1px solid var(--border-g);

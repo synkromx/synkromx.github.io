@@ -9,9 +9,9 @@
 
 // ── Package Config ─────────────────────────────────────────────────────────
 const PACKAGE_PROMPTS = {
-  starter:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo'],
-  profesional: ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'botWhatsapp', 'pautaMeta'],
-  premium:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'reelTestimonialProceso', 'botWhatsapp', 'pautaMeta', 'googleBusiness'],
+  starter:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'fichaProduccion'],
+  profesional: ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'botWhatsapp', 'pautaMeta', 'fichaProduccion'],
+  premium:     ['maestro', 'posts', 'estrategiaCampana', 'calendarioPublicacion', 'reelEducativo', 'reelEmpatia', 'reelTestimonialProceso', 'botWhatsapp', 'pautaMeta', 'googleBusiness', 'fichaProduccion'],
 };
 
 const POSTS_COUNT = { starter: 8, profesional: 16, premium: 20 };
@@ -27,6 +27,7 @@ const PROMPT_LABELS = {
   botWhatsapp:            'Bot WhatsApp',
   pautaMeta:              'Pauta Meta Ads',
   googleBusiness:         'Google Business Profile',
+  fichaProduccion:        'Ficha de Producción Visual',
 };
 
 // ── Firebase ───────────────────────────────────────────────────────────────
@@ -237,9 +238,10 @@ async function generateCampaign() {
     setLoading(true, `Motor Synkro · Paquete ${pkg} · 0/${total}`);
     campaignData = { _package: pkg };
 
-    // ── Prompt 1: Maestro ──────────────────────────────────────────────────
-    setLoading(true, `1/${total} — ${PROMPT_LABELS.maestro}`);
-    const maestroRaw  = await callClaude(apiKey, buildMaestroPrompt(clientData, month), 2048);
+    // ── Prompt 1: Maestro (+ historial Firebase) ──────────────────────────
+    setLoading(true, `1/${total} — ${PROMPT_LABELS.maestro} · leyendo historial…`);
+    const historial  = await fetchHistorial(clientData);
+    const maestroRaw = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial), 2048);
     const maestroText = maestroRaw.content[0].text;
     campaignData.maestro = extractJson(maestroText) || { resumen: maestroText };
 
@@ -266,12 +268,13 @@ async function generateCampaign() {
       const raw = await callClaude(
         apiKey,
         buildPromptFor(pName, clientData, month, campaignData),
-        pName === 'calendarioPublicacion' ? 8192 : pName === 'reelTestimonialProceso' ? 4096 : 3000
+        pName === 'calendarioPublicacion' ? 8192 : pName === 'reelTestimonialProceso' || pName === 'fichaProduccion' ? 4096 : 3000
       );
       campaignData[pName] = extractJson(raw.content[0].text);
     }
 
     renderCampaign(campaignData);
+    generateCampaignExports(campaignData);
     if (campaignData.posts) setupApprovalButton();
     showToast(`✦ Motor Synkro completado — ${total} prompts generados`, 'success');
 
@@ -323,10 +326,76 @@ function monthSection(m) {
 - Nota especial: ${m.nota || 'Ninguna'}`;
 }
 
-// ── PROMPT 1: Maestro ──────────────────────────────────────────────────────
-function buildMaestroPrompt(client, month) {
-  return `Eres el estratega principal del Motor Synkro. Analiza en profundidad el perfil del cliente y los datos del mes para crear el BRIEF MAESTRO que guiará todos los prompts de contenido posteriores.
+// ── Historial Firebase ─────────────────────────────────────────────────────
 
+async function fetchHistorial(data) {
+  if (!data) return [];
+  const clientName = (
+    data.nombre || data.identidad?.nombre || data.negocio?.nombre || data.name || ''
+  );
+  const slug = slugify(clientName);
+  if (!slug || slug === 'cliente') return [];
+
+  try {
+    const snap = await db.ref(`clientes/${slug}/historial`).once('value');
+    if (!snap.exists()) return [];
+    return Object.entries(snap.val())
+      .map(([key, v]) => ({ _mesKey: key, ...v }))
+      .sort((a, b) => (b.guardadoEn || 0) - (a.guardadoEn || 0));
+  } catch (e) {
+    console.warn('[Synkro] fetchHistorial error:', e.message);
+    return [];
+  }
+}
+
+function buildHistorialSection(historial, currentMonth) {
+  const entries = historial
+    .filter(h => slugify(h.mes || h._mesKey || '') !== slugify(currentMonth.mes))
+    .slice(0, 6);
+
+  if (!entries.length) return '';
+
+  const bloques = entries.map(h => {
+    const allHashtags = h.hashtags
+      ? [
+          ...(h.hashtags.marca    || []),
+          ...(h.hashtags.nicho    || []),
+          ...(h.hashtags.trending || []),
+        ].join(' ')
+      : '—';
+    const temas   = Array.isArray(h.temasUsados)      ? h.temasUsados.join(', ')      : '—';
+    const pilares = Array.isArray(h.pilaresContenido)  ? h.pilaresContenido.join(', ') : '—';
+    const label   = `${h.mes || h._mesKey}${h.año ? ' ' + h.año : ''}`;
+
+    return `### ${label}
+- Ángulo narrativo: "${h.anguloNarrativo || '—'}"
+- Mensaje clave: "${h.mensajeClave || '—'}"
+- Emoción principal: ${h.emocionPrincipal || '—'}
+- Tono: ${h.tono || '—'}
+- Temas usados: ${temas}
+- Pilares de contenido: ${pilares}
+- Hashtags de nicho y trending usados: ${allHashtags}`;
+  }).join('\n\n');
+
+  return `## HISTORIAL DE CAMPAÑAS ANTERIORES
+
+⚠️ REGLAS CRÍTICAS DE PROGRESIÓN NARRATIVA — LEE ANTES DE GENERAR:
+1. NO repitas ninguno de los ángulos narrativos listados abajo, ni siquiera en variación superficial.
+2. NO uses los mismos temas ni palabras clave que ya aparecen en meses anteriores.
+3. NO repitas los pilares de contenido del mes inmediatamente anterior — rota a otros pilares.
+4. CONSTRUYE sobre lo anterior: cada campaña es el siguiente capítulo de la historia del negocio. Si el mes pasado fue educativo, este puede ser de prueba social o transformación; si fue emocional, este puede ser práctico o inspiracional.
+5. Los hashtags de #marca pueden repetirse. Los de nicho y trending deben ser frescos o rotados.
+6. El ángulo del mes actual debe sentirse como evolución, no como repetición.
+
+${bloques}`;
+}
+
+// ── PROMPT 1: Maestro ──────────────────────────────────────────────────────
+function buildMaestroPrompt(client, month, historial = []) {
+  const historialSection = buildHistorialSection(historial, month);
+
+  return `Eres el estratega principal del Motor Synkro. Analiza en profundidad el perfil del cliente y los datos del mes para crear el BRIEF MAESTRO que guiará todos los prompts de contenido posteriores.
+${historialSection ? '\n' + historialSection + '\n' : ''}
 ## PERFIL DEL CLIENTE
 ${clientJson(client)}
 
@@ -821,6 +890,57 @@ Responde ÚNICAMENTE con JSON válido. Genera exactamente 4 objetos en "semanas"
 }`;
 }
 
+// ── PROMPT: Ficha de Producción Visual ─────────────────────────────────────
+function buildFichaProduccionPrompt(client, month, campaign) {
+  const maestro = campaign.maestro || {};
+  const posts   = campaign.posts   || {};
+
+  const piezas = [
+    posts.instagram?.length ? `- ${posts.instagram.length} Posts Instagram` : '',
+    posts.facebook?.length  ? `- ${posts.facebook.length} Posts Facebook`   : '',
+    posts.tiktok?.length    ? `- ${posts.tiktok.length} Posts TikTok`       : '',
+    campaign.reelEducativo                       ? '- 1 Reel Educativo'                    : '',
+    campaign.reelEmpatia                         ? '- 1 Reel Empatía'                      : '',
+    campaign.reelTestimonialProceso?.testimonial ? '- 1 Reel Testimonial'                  : '',
+    campaign.reelTestimonialProceso?.proceso     ? '- 1 Reel Proceso / Behind the Scenes'  : '',
+    campaign.pautaMeta                           ? '- 1 Pieza Ad Meta Ads'                 : '',
+  ].filter(Boolean).join('\n');
+
+  return `Eres el director de producción visual del Motor Synkro. Tu tarea es generar la FICHA DE PRODUCCIÓN VISUAL que sirve como guía de ejecución para el diseñador en Canva.
+
+## BRIEF MAESTRO
+\`\`\`json
+${JSON.stringify(maestro, null, 2)}
+\`\`\`
+
+## PERFIL DEL CLIENTE
+${clientJson(client)}
+
+${monthSection(month)}
+
+## PIEZAS DE CONTENIDO GENERADAS ESTE MES
+${piezas}
+
+Para cada tipo de pieza listado arriba genera su ficha de producción. Usa la paleta de colores, tipografía y estilo del cliente cuando estén disponibles. Sé específico y accionable.
+
+Responde ÚNICAMENTE con JSON válido usando el modelo claude-sonnet-4-6:
+
+{
+  "piezas": [
+    {
+      "tipoPieza": "Post Instagram / Reel Educativo / etc.",
+      "formato": "Imagen cuadrada / Carrusel / Video vertical / etc.",
+      "tamano": "1080×1080 px / 1080×1920 px / etc.",
+      "elementosVisuales": "Descripción detallada: colores de marca, tipografía principal, composición, jerarquía visual, íconos o ilustraciones sugeridas, overlay de texto",
+      "templateRecomendado": "Nombre del template o estilo en Canva + categoría (Negocio / Lifestyle / Editorial / Minimalista / etc.)",
+      "musicaRitmo": "N/A para imágenes estáticas — para reels: género musical, BPM aproximado, mood, ejemplo de canción o tendencia de audio",
+      "accionCanva": "Instrucción paso a paso: qué template duplicar, qué texto cambiar, qué imagen reemplazar, qué color ajustar, cómo exportar"
+    }
+  ],
+  "notasGenerales": "Observaciones de coherencia visual para toda la campaña: paleta unificada, fuentes, filtros de foto, estilo de composición"
+}`;
+}
+
 // ── Prompt dispatcher ──────────────────────────────────────────────────────
 function buildPromptFor(name, client, month, campaign) {
   const m = campaign.maestro;
@@ -833,6 +953,7 @@ function buildPromptFor(name, client, month, campaign) {
     case 'botWhatsapp':              return buildBotWhatsappPrompt(client, month, m);
     case 'pautaMeta':                return buildPautaMetaPrompt(client, month, m);
     case 'googleBusiness':           return buildGoogleBusinessPrompt(client, month, m);
+    case 'fichaProduccion':          return buildFichaProduccionPrompt(client, month, campaign);
     default: return '';
   }
 }
@@ -975,9 +1096,266 @@ function renderCampaign(data) {
   if (data.botWhatsapp)  grid.appendChild(buildBotCard(data.botWhatsapp));
   if (data.pautaMeta)    grid.appendChild(buildPautaCard(data.pautaMeta));
   if (data.googleBusiness) grid.appendChild(buildGoogleCard(data.googleBusiness));
+  if (data.fichaProduccion) grid.appendChild(buildFichaProduccionCard(data.fichaProduccion));
 
   outputSection.classList.add('visible');
   setTimeout(() => outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ── Campaign Exports & Historial ──────────────────────────────────────────
+
+function generateCampaignExports(data) {
+  saveHistorialFirebase(data);
+
+  const grid     = $('outputGrid');
+  const existing = $('exportsCard');
+  if (existing) existing.remove();
+
+  const wrapper = document.createElement('div');
+  wrapper.id    = 'exportsCard';
+  wrapper.style.cssText = 'grid-column: 1/-1;';
+
+  const hasBotBtn = !!data.botWhatsapp;
+  const hasCalBtn = !!data.calendarioPublicacion;
+
+  wrapper.innerHTML = `
+    <div class="platform-card exports-card">
+      <div class="platform-bar" style="background:linear-gradient(90deg,#b8860b,#e8b923,#f59e0b)"></div>
+      <div class="platform-header exports-header">
+        <div class="platform-icon" style="background:linear-gradient(135deg,#b8860b,#e8b923);color:#fff;font-size:1.1rem">📥</div>
+        <span class="platform-name" style="color:var(--gold-xl)">Archivos del Mes</span>
+        <span class="exports-saved-badge">✓ Historial guardado en Firebase</span>
+      </div>
+      <div class="platform-body exports-body">
+        <p class="exports-desc">Descarga los archivos de esta campaña para tus registros, producción y entregas al cliente.</p>
+        <div class="exports-btns">
+          <button class="btn-export btn-export-pdf" id="btnDlPdf">
+            <span class="btn-export-icon">📄</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Resumen Ejecutivo</span>
+              <span class="btn-export-sub">HTML · imprime como PDF</span>
+            </span>
+          </button>
+          <button class="btn-export btn-export-json" id="btnDlFull">
+            <span class="btn-export-icon">📦</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Campaña Completa</span>
+              <span class="btn-export-sub">JSON · todos los prompts</span>
+            </span>
+          </button>
+          ${hasBotBtn ? `
+          <button class="btn-export btn-export-wa" id="btnDlBot">
+            <span class="btn-export-icon">💬</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Bot WhatsApp</span>
+              <span class="btn-export-sub">JSON · flujos y mensajes</span>
+            </span>
+          </button>` : ''}
+          ${hasCalBtn ? `
+          <button class="btn-export btn-export-cal" id="btnDlCal">
+            <span class="btn-export-icon">📅</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Calendario</span>
+              <span class="btn-export-sub">JSON · programa de publicación</span>
+            </span>
+          </button>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  grid.appendChild(wrapper);
+
+  wrapper.querySelector('#btnDlPdf').addEventListener('click',  () => downloadResumenHtml(data));
+  wrapper.querySelector('#btnDlFull').addEventListener('click', () => downloadJson(data, 'campaña-completa'));
+
+  const btnBot = wrapper.querySelector('#btnDlBot');
+  if (btnBot) btnBot.addEventListener('click', () => downloadJson(data.botWhatsapp, 'bot-whatsapp'));
+
+  const btnCal = wrapper.querySelector('#btnDlCal');
+  if (btnCal) btnCal.addEventListener('click', () => downloadJson(data.calendarioPublicacion, 'calendario'));
+}
+
+// ── Resumen ejecutivo HTML ─────────────────────────────────────────────────
+
+function downloadResumenHtml(data) {
+  const m      = data.maestro            || {};
+  const e      = data.estrategiaCampana  || {};
+  const month  = getMonthData();
+  const pkg    = data._package           || 'starter';
+
+  const clientName = (clientData && (
+    clientData.nombre
+    || clientData.identidad?.nombre
+    || clientData.negocio?.nombre
+    || clientData.name
+  )) || 'Cliente';
+
+  const hashtags = m.hashtags
+    ? [...(m.hashtags.marca || []), ...(m.hashtags.nicho || []), ...(m.hashtags.trending || [])].join('  ')
+    : '';
+
+  const pilaresHtml = Array.isArray(e.pilaresDeContenido)
+    ? e.pilaresDeContenido.map(p =>
+        `<li><strong>${escP(p.pilar)}</strong> <span class="pct">${escP(p.porcentaje || '')}</span> — ${escP(p.descripcion || '')}</li>`
+      ).join('')
+    : '';
+
+  const doHtml   = Array.isArray(e.doYDont?.do)   ? e.doYDont.do.map(x => `<li>${escP(x)}</li>`).join('')   : '';
+  const dontHtml = Array.isArray(e.doYDont?.dont)  ? e.doYDont.dont.map(x => `<li>${escP(x)}</li>`).join('') : '';
+
+  const semanasHtml = Array.isArray(e.enfoquesSemana)
+    ? `<table class="sem-table"><thead><tr><th>Semana</th><th>Enfoque</th></tr></thead><tbody>` +
+      e.enfoquesSemana.map(s => `<tr><td>${escP(s.semana)}</td><td>${escP(s.enfoque)}</td></tr>`).join('') +
+      `</tbody></table>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resumen Ejecutivo — ${escP(clientName)} · ${escP(month.mes)}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:860px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.65;font-size:14px}
+  h1{color:#b8860b;border-bottom:3px solid #b8860b;padding-bottom:10px;margin-bottom:20px;font-size:1.6rem}
+  h2{color:#0f2847;margin:32px 0 12px;border-left:4px solid #b8860b;padding-left:12px;font-size:1.05rem}
+  .meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .meta-item{background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:8px 16px;min-width:120px}
+  .meta-label{font-size:.65rem;font-weight:700;text-transform:uppercase;color:#92400e;display:block;letter-spacing:.06em}
+  .meta-value{font-weight:700;color:#0f2847;font-size:.92rem}
+  .angulo{background:#fffbeb;border:2px solid #b8860b;border-radius:10px;padding:20px;margin:12px 0;font-size:1.02rem;font-style:italic;color:#1c1917}
+  .mensaje{background:#f0f9ff;border-left:4px solid #0ea5e9;padding:14px 18px;border-radius:0 8px 8px 0;margin:12px 0;font-size:.95rem}
+  ul{padding-left:20px;margin:8px 0}
+  li{margin:5px 0;color:#374151}
+  .pct{background:#fde68a;border-radius:20px;padding:1px 8px;font-size:.72rem;color:#92400e;font-weight:700;margin-left:4px}
+  .do-dont{display:flex;gap:32px;flex-wrap:wrap;margin:8px 0}
+  .do-dont>div{flex:1;min-width:200px}
+  .do-label{font-weight:700;margin-bottom:6px}
+  .hashtags{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;font-size:.82rem;color:#15803d;word-break:break-word;line-height:2}
+  .sem-table{width:100%;border-collapse:collapse;font-size:.84rem;margin:8px 0}
+  .sem-table th{background:#fef3c7;color:#92400e;padding:7px 12px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}
+  .sem-table td{padding:7px 12px;border-bottom:1px solid #fde68a;vertical-align:top}
+  .footer{margin-top:48px;border-top:1px solid #e5e7eb;padding-top:14px;font-size:.75rem;color:#9ca3af;text-align:center}
+  @media print{body{margin:16px;max-width:100%}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+  <h1>Resumen Ejecutivo de Campaña</h1>
+
+  <div class="meta">
+    <div class="meta-item"><span class="meta-label">Cliente</span><span class="meta-value">${escP(clientName)}</span></div>
+    <div class="meta-item"><span class="meta-label">Mes</span><span class="meta-value">${escP(month.mes)}</span></div>
+    <div class="meta-item"><span class="meta-label">Servicio estrella</span><span class="meta-value">${escP(month.servicio)}</span></div>
+    <div class="meta-item"><span class="meta-label">Paquete</span><span class="meta-value">${escP(pkg.charAt(0).toUpperCase() + pkg.slice(1))}</span></div>
+    ${month.promocion ? `<div class="meta-item"><span class="meta-label">Promoción</span><span class="meta-value">${escP(month.promocion)}</span></div>` : ''}
+  </div>
+
+  <h2>Ángulo Narrativo de la Campaña</h2>
+  <div class="angulo">"${escP(e.anguloNarrativo || m.anguloCampana || '—')}"</div>
+
+  ${e.mensajeClave ? `<h2>Mensaje Clave</h2><div class="mensaje">${escP(e.mensajeClave)}</div>` : ''}
+  ${m.propuestaValor ? `<h2>Propuesta de Valor</h2><p>${escP(m.propuestaValor)}</p>` : ''}
+  ${e.emocionPrincipal || m.emocionPrincipal ? `<h2>Emoción Principal</h2><p>${escP(e.emocionPrincipal || m.emocionPrincipal)}</p>` : ''}
+  ${e.tono ? `<h2>Tono de Comunicación</h2><p>${escP(e.tono)}</p>` : ''}
+
+  ${pilaresHtml ? `<h2>Pilares de Contenido</h2><ul>${pilaresHtml}</ul>` : ''}
+  ${semanasHtml ? `<h2>Enfoque por Semana</h2>${semanasHtml}` : ''}
+
+  ${m.palabrasClave?.length ? `<h2>Temas Usados</h2><p>${escP(m.palabrasClave.join(' · '))}</p>` : ''}
+
+  ${doHtml || dontHtml ? `
+  <h2>Do &amp; Don't de Comunicación</h2>
+  <div class="do-dont">
+    ${doHtml   ? `<div><div class="do-label" style="color:#16a34a">✓ Hacer</div><ul>${doHtml}</ul></div>`   : ''}
+    ${dontHtml ? `<div><div class="do-label" style="color:#dc2626">✗ Evitar</div><ul>${dontHtml}</ul></div>` : ''}
+  </div>` : ''}
+
+  ${hashtags ? `<h2>Hashtags de la Campaña</h2><div class="hashtags">${escP(hashtags)}</div>` : ''}
+
+  <div class="footer">Generado por Motor Synkro &nbsp;·&nbsp; ${escP(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }))}</div>
+</body>
+</html>`;
+
+  triggerDownload(
+    new Blob([html], { type: 'text/html;charset=utf-8' }),
+    `resumen-${slugify(clientName)}-${slugify(month.mes)}.html`
+  );
+}
+
+// ── JSON download helper ───────────────────────────────────────────────────
+
+function downloadJson(obj, label) {
+  const month      = getMonthData();
+  const clientName = (clientData && (
+    clientData.nombre || clientData.identidad?.nombre || clientData.negocio?.nombre || clientData.name
+  )) || 'cliente';
+  triggerDownload(
+    new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' }),
+    `${label}-${slugify(clientName)}-${slugify(month.mes)}.json`
+  );
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href    = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// ── Firebase historial del cliente ────────────────────────────────────────
+
+function saveHistorialFirebase(data) {
+  const month = getMonthData();
+  const m     = data.maestro           || {};
+  const e     = data.estrategiaCampana || {};
+
+  const clientName = (clientData && (
+    clientData.nombre || clientData.identidad?.nombre || clientData.negocio?.nombre || clientData.name
+  )) || 'cliente';
+
+  const clienteSlug = slugify(clientName);
+  const mesSlug     = slugify(month.mes) + '-' + new Date().getFullYear();
+
+  const entrada = {
+    mes:              month.mes,
+    año:              new Date().getFullYear(),
+    servicio:         month.servicio,
+    anguloNarrativo:  e.anguloNarrativo  || m.anguloCampana   || '',
+    mensajeClave:     e.mensajeClave     || '',
+    emocionPrincipal: e.emocionPrincipal || m.emocionPrincipal || '',
+    tono:             e.tono             || m.tonoVoz          || '',
+    temasUsados:      m.palabrasClave    || [],
+    pilaresContenido: (e.pilaresDeContenido || []).map(p => p.pilar).filter(Boolean),
+    hashtags:         m.hashtags         || {},
+    paquete:          data._package      || 'starter',
+    guardadoEn:       Date.now(),
+  };
+
+  db.ref(`clientes/${clienteSlug}/historial/${mesSlug}`)
+    .set(entrada)
+    .then(() => console.log(`[Synkro] Historial → clientes/${clienteSlug}/historial/${mesSlug}`))
+    .catch(err => console.warn('[Synkro] Historial Firebase error:', err.message));
+}
+
+// ── String helpers ────────────────────────────────────────────────────────
+
+function slugify(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function escP(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── Card Builders ──────────────────────────────────────────────────────────
@@ -1432,6 +1810,61 @@ function buildCalendarioCard(cal) {
   return wrapper;
 }
 
+// Ficha de Producción Visual card (full-width)
+function buildFichaProduccionCard(ficha) {
+  if (!ficha || !Array.isArray(ficha.piezas)) return document.createTextNode('');
+
+  const rows = ficha.piezas.map(p => `
+    <tr>
+      <td class="fp-tipo">${escHtml(p.tipoPieza || '')}</td>
+      <td>${escHtml(p.formato || '')}<br><span class="fp-size">${escHtml(p.tamano || '')}</span></td>
+      <td>${escHtml(p.elementosVisuales || '')}</td>
+      <td>${escHtml(p.templateRecomendado || '')}</td>
+      <td>${escHtml(p.musicaRitmo || '')}</td>
+      <td>${escHtml(p.accionCanva || '')}</td>
+    </tr>`).join('');
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'grid-column: 1/-1;';
+  wrapper.innerHTML = `
+    <div class="platform-card" style="overflow:visible">
+      <div class="platform-bar" style="background:linear-gradient(90deg,#7c3aed,#0ea5e9,#10b981)"></div>
+      <div class="platform-header">
+        <div class="platform-icon" style="background:linear-gradient(135deg,#7c3aed,#0ea5e9);color:#fff;font-size:1rem">🎨</div>
+        <span class="platform-name">Ficha de Producción Visual</span>
+        <button type="button" class="btn-copy-hdr synkro-fp-copy">Copiar JSON</button>
+      </div>
+      <div class="platform-body" style="gap:0;padding:0 0 16px">
+        <div class="fp-table-wrap">
+          <table class="fp-table">
+            <thead>
+              <tr>
+                <th>Tipo de Pieza</th>
+                <th>Formato / Tamaño</th>
+                <th>Elementos Visuales</th>
+                <th>Template Canva</th>
+                <th>Música / Ritmo</th>
+                <th>Acción en Canva</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${ficha.notasGenerales ? `<div class="fp-notas">${escHtml(ficha.notasGenerales)}</div>` : ''}
+      </div>
+    </div>`;
+
+  wrapper.querySelector('.synkro-fp-copy').addEventListener('click', function () {
+    const text = JSON.stringify(ficha, null, 2);
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    this.textContent = '✓ Copiado';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Copiar JSON'; this.classList.remove('copied'); }, 2000);
+  });
+
+  return wrapper;
+}
+
 // ── Loading State ──────────────────────────────────────────────────────────
 function setLoading(on, msg) {
   generateBtn.disabled = on;
@@ -1564,6 +1997,7 @@ function buildApprovalData(code) {
       facebook:  posts.facebook  || [],
       tiktok:    posts.tiktok    || [],
     },
+    fichaProduccion: (campaignData && campaignData.fichaProduccion) || null,
     approvals,
     lastUpdated: Date.now(),
   };
