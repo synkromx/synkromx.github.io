@@ -2301,11 +2301,15 @@ function renderStatusSection() {
         const code = this.dataset.code;
         const net  = this.dataset.net;
         const idx  = this.dataset.idx;
-        // Obtener el texto actual del post desde Firebase
-        db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).once('value')
-          .then(snap => {
-            const currentText = snap.val() || '';
-            openEditModal(code, net, idx, currentText);
+        // Obtener el texto actual del post Y el comentario del cliente desde Firebase
+        Promise.all([
+          db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).once('value'),
+          db.ref(`campaigns/${code}/approvals/${net}_${idx}/comment`).once('value')
+        ])
+          .then(([postSnap, commentSnap]) => {
+            const currentText   = postSnap.val() || '';
+            const clientComment = commentSnap.val() || '';
+            openEditModal(code, net, idx, currentText, clientComment);
           })
           .catch(err => showToast('Error cargando post: ' + err.message, 'error'));
       });
@@ -2317,7 +2321,7 @@ function renderStatusSection() {
 
 // ── Módulo de Edición de Posts ─────────────────────────────────────────────
 
-function openEditModal(code, net, idx, currentText) {
+function openEditModal(code, net, idx, currentText, clientComment = '') {
   // Remover modal existente si hay
   const existing = document.getElementById('editModal');
   if (existing) existing.remove();
@@ -2359,6 +2363,27 @@ function openEditModal(code, net, idx, currentText) {
         " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#5a7898'">✕</button>
       </div>
 
+      ${clientComment ? `
+      <div style="
+        background:rgba(234,88,12,.08);
+        border:1px solid rgba(234,88,12,.25);
+        border-radius:8px;
+        padding:12px 16px;
+        display:flex;flex-direction:column;gap:4px;
+      ">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fb923c;">
+          💬 Sugerencia del cliente
+        </div>
+        <div style="font-size:.85rem;color:#fff;font-style:italic;line-height:1.5;">
+          "${escHtml(clientComment)}"
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5a7898;">
+        Copy actual — edita aquí
+      </div>
+
       <textarea id="editPostText" style="
         background:#0a1e3a;
         border:1px solid rgba(184,134,11,.2);
@@ -2368,7 +2393,7 @@ function openEditModal(code, net, idx, currentText) {
         font-size:.88rem;
         line-height:1.6;
         resize:vertical;
-        min-height:220px;
+        min-height:200px;
         outline:none;
         font-family:inherit;
         width:100%;
@@ -2376,7 +2401,7 @@ function openEditModal(code, net, idx, currentText) {
       " onfocus="this.style.borderColor='#b8860b'" onblur="this.style.borderColor='rgba(184,134,11,.2)'">${escHtml(currentText)}</textarea>
 
       <div style="font-size:.72rem;color:#5a7898;">
-        El cliente verá la versión actualizada en su portal de aprobación inmediatamente.
+        El cliente verá el copy actualizado en su portal y deberá aprobarlo nuevamente.
       </div>
 
       <div style="display:flex;gap:10px;justify-content:flex-end;">
