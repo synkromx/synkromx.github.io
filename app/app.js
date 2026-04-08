@@ -2275,6 +2275,151 @@ function renderStatusSection() {
       }
     });
 
+    // Botones de editar post
+    card.querySelectorAll('.btn-edit-post').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const code = this.dataset.code;
+        const net  = this.dataset.net;
+        const idx  = this.dataset.idx;
+        // Obtener el texto actual del post desde Firebase
+        db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).once('value')
+          .then(snap => {
+            const currentText = snap.val() || '';
+            openEditModal(code, net, idx, currentText);
+          })
+          .catch(err => showToast('Error cargando post: ' + err.message, 'error'));
+      });
+    });
+
     container.appendChild(card);
   });
+}
+
+// ── Módulo de Edición de Posts ─────────────────────────────────────────────
+
+function openEditModal(code, net, idx, currentText) {
+  // Remover modal existente si hay
+  const existing = document.getElementById('editModal');
+  if (existing) existing.remove();
+
+  const netLabels = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok' };
+  const modal = document.createElement('div');
+  modal.id = 'editModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:9000;
+    background:rgba(4,10,20,.88);
+    backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  `;
+
+  modal.innerHTML = `
+    <div style="
+      background:#0f3460;
+      border:1px solid rgba(184,134,11,.25);
+      border-radius:14px;
+      padding:32px;
+      width:100%;max-width:580px;
+      box-shadow:0 8px 40px rgba(0,0,0,.6);
+      display:flex;flex-direction:column;gap:16px;
+    ">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:#b8860b;margin-bottom:4px;">
+            Editando post
+          </div>
+          <div style="font-size:1rem;font-weight:700;color:#fff;">
+            ${netLabels[net] || net} · Post ${Number(idx) + 1}
+          </div>
+        </div>
+        <button id="editModalClose" style="
+          background:transparent;border:none;color:#5a7898;
+          font-size:1.4rem;cursor:pointer;padding:4px 8px;
+          transition:color .2s;
+        " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#5a7898'">✕</button>
+      </div>
+
+      <textarea id="editPostText" style="
+        background:#0a1e3a;
+        border:1px solid rgba(184,134,11,.2);
+        border-radius:8px;
+        color:#fff;
+        padding:16px;
+        font-size:.88rem;
+        line-height:1.6;
+        resize:vertical;
+        min-height:220px;
+        outline:none;
+        font-family:inherit;
+        width:100%;
+        transition:border-color .2s;
+      " onfocus="this.style.borderColor='#b8860b'" onblur="this.style.borderColor='rgba(184,134,11,.2)'">${escHtml(currentText)}</textarea>
+
+      <div style="font-size:.72rem;color:#5a7898;">
+        El cliente verá la versión actualizada en su portal de aprobación inmediatamente.
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="editModalCancel" style="
+          background:transparent;
+          border:1px solid rgba(184,134,11,.2);
+          color:#5a7898;border-radius:8px;
+          padding:10px 20px;font-size:.85rem;
+          cursor:pointer;transition:all .2s;
+        " onmouseover="this.style.borderColor='#b8860b';this.style.color='#d4a017'"
+           onmouseout="this.style.borderColor='rgba(184,134,11,.2)';this.style.color='#5a7898'">
+          Cancelar
+        </button>
+        <button id="editModalSave" style="
+          background:#b8860b;color:#0f2847;
+          border:none;border-radius:8px;
+          padding:10px 24px;font-size:.85rem;
+          font-weight:700;cursor:pointer;
+          transition:background .2s;
+        " onmouseover="this.style.background='#d4a017'"
+           onmouseout="this.style.background='#b8860b'">
+          ✓ Guardar cambio
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Cerrar con X o Cancelar
+  document.getElementById('editModalClose').addEventListener('click', () => modal.remove());
+  document.getElementById('editModalCancel').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  // Guardar
+  document.getElementById('editModalSave').addEventListener('click', () => {
+    const newText = document.getElementById('editPostText').value.trim();
+    if (!newText) { showToast('El texto no puede estar vacío', 'error'); return; }
+
+    const saveBtn = document.getElementById('editModalSave');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Guardando...';
+
+    // Actualizar el post en Firebase
+    db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).set(newText)
+      .then(() => {
+        // Resetear el estado de aprobación de ese post a pending
+        return db.ref(`campaigns/${code}/approvals/${net}_${idx}`).set({
+          status: 'pending',
+          comment: ''
+        });
+      })
+      .then(() => {
+        modal.remove();
+        showToast('✓ Post actualizado — el cliente puede revisarlo', 'success');
+      })
+      .catch(err => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '✓ Guardar cambio';
+        showToast('Error guardando: ' + err.message, 'error');
+      });
+  });
+
+  // Focus al textarea
+  setTimeout(() => document.getElementById('editPostText')?.focus(), 100);
 }
