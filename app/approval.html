@@ -127,6 +127,17 @@
       white-space: nowrap; flex-shrink: 0;
     }
     .a-timer.expired { background: rgba(224,85,85,.1); border-color: rgba(224,85,85,.3); color: #e07070 }
+    .extension-banner {
+      display: none;
+      align-items: center; gap: 10px;
+      background: rgba(184,134,11,.12);
+      border: 1px solid rgba(184,134,11,.3);
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      font-size: .82rem; color: #d4a017;
+    }
+    .extension-banner-icon { font-size: 1.1rem; flex-shrink: 0; }
     .a-progress-row {
       display: flex; align-items: center; gap: 14px;
     }
@@ -887,19 +898,28 @@ function startCountdown() {
 
 function updateTimer() {
   const el = document.getElementById('aTimer');
-  if (!el)  return;
-  const remaining = Math.max(0, data.createdAt + 48 * 3600000 - Date.now());
+  if (!el) return;
+
+  const deadline  = data.extendedAt
+    ? data.extendedAt + 24 * 3600000
+    : data.createdAt + 48 * 3600000;
+  const remaining = Math.max(0, deadline - Date.now());
+
   if (remaining === 0) {
     el.className = 'a-timer expired';
     el.textContent = '⏰ Tiempo expirado';
     clearInterval(timerRef);
     return;
   }
-  const h  = Math.floor(remaining / 3600000);
-  const m  = Math.floor((remaining % 3600000) / 60000);
-  const s  = Math.floor((remaining % 60000) / 1000);
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
   el.className = 'a-timer';
   el.textContent = `⏱ ${pad(h)}:${pad(m)}:${pad(s)} restantes`;
+
+  // Mostrar banner de extensión si aplica
+  const banner = document.getElementById('extensionBanner');
+  if (banner) banner.style.display = data.extendedAt ? 'flex' : 'none';
 }
 function pad(n) { return String(n).padStart(2,'0') }
 

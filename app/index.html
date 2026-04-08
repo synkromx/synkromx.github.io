@@ -688,6 +688,18 @@
       border-radius: var(--rs); transition: all .2s;
     }
     .btn-delete-approval:hover { color: #e07070; border-color: rgba(224,85,85,.3) }
+    .btn-extend-approval {
+      background: rgba(184,134,11,.1); border: 1px solid rgba(184,134,11,.25);
+      color: var(--gold-l); cursor: pointer; font-size: .78rem; font-weight: 600;
+      padding: 6px 14px; border-radius: var(--rs); transition: all .2s;
+    }
+    .btn-extend-approval:hover { background: rgba(184,134,11,.2); border-color: var(--gold); color: var(--gold-xl) }
+    .status-extended-badge {
+      font-size: .65rem; font-weight: 700; letter-spacing: .06em;
+      background: rgba(184,134,11,.15); color: var(--gold);
+      border: 1px solid rgba(184,134,11,.25);
+      padding: 2px 7px; border-radius: 100px; margin-left: 6px;
+    }
 
     @media(max-width:640px) {
       .approval-send-card { flex-direction: column; align-items: flex-start }

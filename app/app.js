@@ -2217,8 +2217,11 @@ function renderStatusSection() {
     const total      = Object.keys(sess.approvals).length;
     const approved   = Object.values(sess.approvals).filter(v => v.status === 'approved').length;
     const withChange = Object.entries(sess.approvals).filter(([, v]) => v.status === 'changes' && v.comment);
-    const elapsed    = Date.now() - sess.createdAt;
-    const remaining  = Math.max(0, 48 * 3600000 - elapsed);
+    const baseTime   = sess.extendedAt || sess.createdAt;
+    const deadline   = sess.extendedAt
+      ? sess.extendedAt + 24 * 3600000
+      : sess.createdAt + 48 * 3600000;
+    const remaining  = Math.max(0, deadline - Date.now());
     const hrs        = Math.floor(remaining / 3600000);
     const mins       = Math.floor((remaining % 3600000) / 60000);
     const expired    = remaining === 0;
@@ -2243,6 +2246,7 @@ function renderStatusSection() {
           </div>
           <div class="status-timer ${expired ? 'expired' : ''}">
             ${expired ? '⏰ Expirado' : `⏱ ${hrs}h ${mins}m restantes`}
+            ${sess.extendedAt ? '<span class="status-extended-badge">+24h extendido</span>' : ''}
           </div>
         </div>
       </div>
@@ -2264,9 +2268,25 @@ function renderStatusSection() {
       ` : ''}
       <div class="status-card-footer">
         <a href="${escHtml(getApprovalUrl(sess.code))}" target="_blank" class="btn-open-approval">Ver página del cliente ↗</a>
+        ${expired ? `<button class="btn-extend-approval" data-code="${escHtml(sess.code)}">⏳ Extender 24h</button>` : ''}
         <button class="btn-delete-approval" data-code="${escHtml(sess.code)}">Eliminar</button>
       </div>
     `;
+
+    // Botón extender
+    const extendBtn = card.querySelector('.btn-extend-approval');
+    if (extendBtn) {
+      extendBtn.addEventListener('click', function () {
+        const code = this.dataset.code;
+        const now  = Date.now();
+        db.ref('campaigns/' + code).update({
+          extendedAt:  now,
+          lastUpdated: now,
+        })
+        .then(() => showToast('✓ Campaña extendida 24h — el cliente fue notificado en su portal', 'success'))
+        .catch(err => showToast('Error extendiendo: ' + err.message, 'error'));
+      });
+    }
 
     card.querySelector('.btn-delete-approval').addEventListener('click', function () {
       if (confirm(`¿Eliminar sesión de aprobación ${this.dataset.code}?`)) {
