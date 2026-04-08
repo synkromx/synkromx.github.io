@@ -41,7 +41,8 @@ const firebaseConfig = {
   appId:             '1:625963873871:web:7612e0dbcb0e9c07861c3a',
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db   = firebase.database();
+const auth = firebase.auth();
 
 // ── State ──────────────────────────────────────────────────────────────────
 let clientData     = null;
@@ -74,7 +75,8 @@ const saveApiKey     = $('saveApiKey');
 const toast          = $('toast');
 
 // ── Init ───────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── Auth ───────────────────────────────────────────────────────────────────
+function initApp() {
   setupDragDrop();
   setupApiKeyModal();
   setupGenerateBtn();
@@ -86,6 +88,83 @@ document.addEventListener('DOMContentLoaded', () => {
     apiKeyBtn.style.borderColor = 'var(--teal)';
     apiKeyBtn.style.color       = 'var(--teal-xl)';
   }
+
+  // Logout
+  const logoutBtn = $('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      auth.signOut().then(() => {
+        $('loginScreen').classList.remove('hidden');
+        $('loginError').textContent = '';
+        $('loginEmail').value = '';
+        $('loginPassword').value = '';
+      });
+    });
+  }
+}
+
+function setupLogin() {
+  const loginBtn      = $('loginBtn');
+  const loginEmail    = $('loginEmail');
+  const loginPassword = $('loginPassword');
+  const loginError    = $('loginError');
+  const loginScreen   = $('loginScreen');
+
+  // Enter key en password = submit
+  loginPassword.addEventListener('keydown', e => {
+    if (e.key === 'Enter') loginBtn.click();
+  });
+  loginEmail.addEventListener('keydown', e => {
+    if (e.key === 'Enter') loginPassword.focus();
+  });
+
+  loginBtn.addEventListener('click', () => {
+    const email = loginEmail.value.trim();
+    const pass  = loginPassword.value;
+    if (!email || !pass) { loginError.textContent = 'Ingresa tu correo y contraseña.'; return; }
+
+    loginBtn.disabled    = true;
+    loginBtn.textContent = 'Verificando...';
+    loginError.textContent = '';
+
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(() => {
+        loginScreen.classList.add('hidden');
+        loginBtn.disabled    = false;
+        loginBtn.textContent = 'Entrar';
+      })
+      .catch(err => {
+        loginBtn.disabled    = false;
+        loginBtn.textContent = 'Entrar';
+        switch (err.code) {
+          case 'auth/invalid-credential':
+          case 'auth/wrong-password':
+          case 'auth/user-not-found':
+            loginError.textContent = 'Correo o contraseña incorrectos.'; break;
+          case 'auth/too-many-requests':
+            loginError.textContent = 'Demasiados intentos. Espera unos minutos.'; break;
+          default:
+            loginError.textContent = 'Error al iniciar sesión. Intenta de nuevo.';
+        }
+      });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupLogin();
+
+  // Firebase Auth observer — controla acceso a la app
+  auth.onAuthStateChanged(user => {
+    const loginScreen = $('loginScreen');
+    if (user) {
+      // Usuario autenticado — mostrar app
+      loginScreen.classList.add('hidden');
+      initApp();
+    } else {
+      // No autenticado — mostrar login
+      loginScreen.classList.remove('hidden');
+    }
+  });
 });
 
 // ── Drag & Drop ────────────────────────────────────────────────────────────
