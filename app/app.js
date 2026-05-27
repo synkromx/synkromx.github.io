@@ -81,6 +81,7 @@ function initApp() {
   setupApiKeyModal();
   setupGenerateBtn();
   initStatusSection();
+  setupCierreModal();
   $('demoBtn').addEventListener('click', loadDemoData);
 
   const key = localStorage.getItem('synkro_api_key');
@@ -312,7 +313,8 @@ async function generateCampaign() {
     const pkg     = detectPackage(clientData);
     const prompts = PACKAGE_PROMPTS[pkg];
     const total   = prompts.length;
-    const month   = getMonthData();
+    const month      = getMonthData();
+    const continuity = getContinuityData();
 
     setLoading(true, `Motor Synkro · Paquete ${pkg} · 0/${total}`);
     campaignData = { _package: pkg };
@@ -320,7 +322,15 @@ async function generateCampaign() {
     // ── Prompt 1: Maestro (+ historial Firebase) ──────────────────────────
     setLoading(true, `1/${total} — ${PROMPT_LABELS.maestro} · leyendo historial…`);
     const historial  = await fetchHistorial(clientData);
-    const maestroRaw = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial), 2048);
+
+    const clientSlug      = slugify(clientData?.identidad?.nombre_comercial || clientData?.identidad?.nombre || clientData?.negocio?.nombre || clientData?.nombre || clientData?.name || '');
+    const MESES           = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const mesAnteriorIdx  = MESES.indexOf(month.mes.toLowerCase());
+    const mesAnterior     = mesAnteriorIdx > 0 ? MESES[mesAnteriorIdx - 1] : 'diciembre';
+    const añoCierre       = mesAnteriorIdx > 0 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+    const cierreMesAnterior = await fetchCierreMes(clientSlug, mesAnterior, añoCierre);
+
+    const maestroRaw = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial, continuity, cierreMesAnterior), 2048);
     const maestroText = maestroRaw.content[0].text;
     campaignData.maestro = extractJson(maestroText) || { resumen: maestroText };
 
@@ -387,6 +397,16 @@ function getMonthData() {
   };
 }
 
+function getContinuityData() {
+  return {
+    objetivoMes:  ($('fObjetivoMes')  && $('fObjetivoMes').value)  || '',
+    promocionMes: ($('fPromocionMes') && $('fPromocionMes').value) || '',
+    temporada:    ($('fTemporada')    && $('fTemporada').value)    || '',
+    queRepetir:   ($('fQueRepetir')   && $('fQueRepetir').value)   || '',
+    instruccion:  ($('fInstruccion')  && $('fInstruccion').value)  || '',
+  };
+}
+
 // ── Prompt Builders ────────────────────────────────────────────────────────
 
 function clientJson(data) {
@@ -417,14 +437,29 @@ async function fetchHistorial(data) {
 
   try {
     const snap = await db.ref(`clientes/${slug}/historial`).once('value');
-    if (!snap.exists()) return [];
-    return Object.entries(snap.val())
+    if (!snap.exists()) {
+      hideContinuityCard();
+      return [];
+    }
+    const entries = Object.entries(snap.val())
       .map(([key, v]) => ({ _mesKey: key, ...v }))
       .sort((a, b) => (b.guardadoEn || 0) - (a.guardadoEn || 0));
+    if (entries.length) showContinuityCard(); else hideContinuityCard();
+    return entries;
   } catch (e) {
     console.warn('[Synkro] fetchHistorial error:', e.message);
     return [];
   }
+}
+
+function showContinuityCard() {
+  const card = document.getElementById('continuityCard');
+  if (card) card.classList.remove('hidden');
+}
+
+function hideContinuityCard() {
+  const card = document.getElementById('continuityCard');
+  if (card) card.classList.add('hidden');
 }
 
 function buildHistorialSection(historial, currentMonth) {
@@ -470,11 +505,39 @@ ${bloques}`;
 }
 
 // ── PROMPT 1: Maestro ──────────────────────────────────────────────────────
-function buildMaestroPrompt(client, month, historial = []) {
+function buildMaestroPrompt(client, month, historial = [], continuity = {}, cierre = null) {
   const historialSection = buildHistorialSection(historial, month);
 
+  const hasContinuity = continuity.objetivoMes || continuity.instruccion || continuity.queRepetir;
+  const continuitySection = hasContinuity ? `
+## CONTEXTO ESPECÍFICO DE ESTE MES
+- Objetivo principal: ${continuity.objetivoMes || 'N/A'}
+- Promoción o evento: ${continuity.promocionMes || 'N/A'}
+- Contexto externo: ${continuity.temporada || 'N/A'}
+- Qué funcionó el mes anterior (aprovechar): ${continuity.queRepetir || 'N/A'}
+- Instrucción especial: ${continuity.instruccion || 'N/A'}
+
+REGLAS para este mes:
+- El objetivo declarado arriba es la prioridad estratégica número uno
+- Si hay algo que funcionó el mes anterior, construir sobre eso, no ignorarlo
+- La instrucción especial tiene precedencia sobre cualquier decisión de tono o enfoque
+` : '';
+
+  const cierreSection = cierre ? `
+## MÉTRICAS REALES DEL MES ANTERIOR
+- Instagram: ${cierre.instagram?.seguidoresInicio ?? 0} → ${cierre.instagram?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.instagram?.alcance ?? 0} | Interacciones: ${cierre.instagram?.interacciones ?? 0}
+- Facebook: ${cierre.facebook?.seguidoresInicio ?? 0} → ${cierre.facebook?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.facebook?.alcance ?? 0} | Interacciones: ${cierre.facebook?.interacciones ?? 0}
+- TikTok: ${cierre.tiktok?.seguidoresInicio ?? 0} → ${cierre.tiktok?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.tiktok?.alcance ?? 0} | Interacciones: ${cierre.tiktok?.interacciones ?? 0}
+- Mejor contenido: IG=${cierre.instagram?.mejorPost || '—'} | FB=${cierre.facebook?.mejorPost || '—'} | TK=${cierre.tiktok?.mejorPost || '—'}
+- Peor contenido: IG=${cierre.instagram?.peorPost || '—'} | FB=${cierre.facebook?.peorPost || '—'} | TK=${cierre.tiktok?.peorPost || '—'}
+- WhatsApp mensajes recibidos: ${cierre.whatsappMensajes ?? 0}
+- Observación: ${cierre.observacion || '—'}
+
+INSTRUCCIÓN: Usa estas métricas para ajustar el enfoque del mes siguiente. Si una red creció más, potenciarla. Si el mejor post fue de cierto tipo, replicar ese formato. Si el peor fue de cierto tipo, evitarlo o reformularlo.
+` : '';
+
   return `Eres el estratega principal del Motor Synkro. Analiza en profundidad el perfil del cliente y los datos del mes para crear el BRIEF MAESTRO que guiará todos los prompts de contenido posteriores.
-${historialSection ? '\n' + historialSection + '\n' : ''}
+${historialSection ? '\n' + historialSection + '\n' : ''}${continuitySection}${cierreSection}
 ## PERFIL DEL CLIENTE
 ${clientJson(client)}
 
@@ -2467,4 +2530,103 @@ function openEditModal(code, net, idx, currentText, clientComment = '') {
 
   // Focus al textarea
   setTimeout(() => document.getElementById('editPostText')?.focus(), 100);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MÓDULO DE CIERRE DE MES ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+function setupCierreModal() {
+  const btn      = document.getElementById('cierreBtn');
+  const backdrop = document.getElementById('cierreModalBackdrop');
+  const closeBtn = document.getElementById('cierreModalClose');
+  const saveBtn  = document.getElementById('saveCierreBtn');
+  if (!btn || !backdrop) return;
+
+  btn.addEventListener('click', function () {
+    backdrop.classList.add('open');
+    if (clientData) {
+      const slugField = document.getElementById('cCliente');
+      if (slugField) slugField.value = slugify(
+        clientData.identidad?.nombre_comercial ||
+        clientData.identidad?.nombre ||
+        clientData.negocio?.nombre ||
+        clientData.nombre ||
+        clientData.name || ''
+      );
+    }
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', function () {
+    backdrop.classList.remove('open');
+  });
+
+  backdrop.addEventListener('click', function (e) {
+    if (e.target === backdrop) backdrop.classList.remove('open');
+  });
+
+  if (saveBtn) saveBtn.addEventListener('click', saveCierreMes);
+}
+
+async function saveCierreMes() {
+  const slug = document.getElementById('cCliente')?.value?.trim();
+  const mes  = document.getElementById('cMes')?.value;
+  if (!slug || !mes) { showToast('Completa el cliente y el mes', 'error'); return; }
+
+  const año  = new Date().getFullYear();
+  const key  = mes.toLowerCase() + '-' + año;
+
+  const cierre = {
+    mes,
+    año,
+    fechaCierre: new Date().toISOString(),
+    instagram: {
+      seguidoresInicio: parseInt(document.getElementById('cIgSegInicio')?.value)   || 0,
+      seguidoresFin:    parseInt(document.getElementById('cIgSegFin')?.value)       || 0,
+      alcance:          parseInt(document.getElementById('cIgAlcance')?.value)      || 0,
+      interacciones:    parseInt(document.getElementById('cIgInteracciones')?.value)|| 0,
+      mejorPost:        document.getElementById('cIgMejorPost')?.value              || '',
+      peorPost:         document.getElementById('cIgPeorPost')?.value               || '',
+    },
+    facebook: {
+      seguidoresInicio: parseInt(document.getElementById('cFbSegInicio')?.value)   || 0,
+      seguidoresFin:    parseInt(document.getElementById('cFbSegFin')?.value)       || 0,
+      alcance:          parseInt(document.getElementById('cFbAlcance')?.value)      || 0,
+      interacciones:    parseInt(document.getElementById('cFbInteracciones')?.value)|| 0,
+      mejorPost:        document.getElementById('cFbMejorPost')?.value              || '',
+      peorPost:         document.getElementById('cFbPeorPost')?.value               || '',
+    },
+    tiktok: {
+      seguidoresInicio: parseInt(document.getElementById('cTkSegInicio')?.value)   || 0,
+      seguidoresFin:    parseInt(document.getElementById('cTkSegFin')?.value)       || 0,
+      alcance:          parseInt(document.getElementById('cTkAlcance')?.value)      || 0,
+      interacciones:    parseInt(document.getElementById('cTkInteracciones')?.value)|| 0,
+      mejorPost:        document.getElementById('cTkMejorPost')?.value              || '',
+      peorPost:         document.getElementById('cTkPeorPost')?.value               || '',
+    },
+    whatsappMensajes: parseInt(document.getElementById('cWhatsappMensajes')?.value) || 0,
+    observacion:      document.getElementById('cObservacion')?.value                || '',
+  };
+
+  const saveBtn = document.getElementById('saveCierreBtn');
+  try {
+    if (saveBtn) saveBtn.textContent = 'Guardando...';
+    await db.ref(`clientes/${slug}/cierres/${key}`).set(cierre);
+    showToast('✓ Cierre de mes guardado correctamente', 'success');
+    document.getElementById('cierreModalBackdrop').classList.remove('open');
+  } catch (e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+  } finally {
+    if (saveBtn) saveBtn.textContent = '💾 Guardar Cierre de Mes';
+  }
+}
+
+async function fetchCierreMes(slug, mes, año) {
+  try {
+    const key  = mes.toLowerCase() + '-' + año;
+    const snap = await db.ref(`clientes/${slug}/cierres/${key}`).once('value');
+    return snap.val();
+  } catch (e) {
+    return null;
+  }
 }

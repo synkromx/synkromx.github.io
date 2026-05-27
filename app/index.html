@@ -721,6 +721,23 @@
       text-align: center;
     }
 
+    /* ─── CONTINUITY CARD ────────────────────────────────── */
+    .continuity-card {
+      border-left: 3px solid #b8860b;
+    }
+    .continuity-badge {
+      display: inline-block;
+      background: #b8860b;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+
     /* ─── LOGIN SCREEN ───────────────────────────────── */
     #loginScreen {
       position: fixed; inset: 0; z-index: 9999;
@@ -766,6 +783,32 @@
       transition: all .2s; margin-left: 8px;
     }
     .btn-logout:hover { border-color: var(--gold); color: var(--gold-l); }
+
+    .btn-cierre {
+      background: transparent;
+      border: 1px solid #b8860b;
+      color: #b8860b;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      margin-left: 8px;
+    }
+    .btn-cierre:hover { background: #b8860b; color: #0f2847; }
+
+    /* ─── CIERRE MODAL ───────────────────────────────────── */
+    .cierre-block {
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 4px;
+    }
+    .cierre-block-title {
+      font-size: .68rem; font-weight: 800; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--gold-l);
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -797,6 +840,7 @@
       </svg>
       API Key
     </button>
+    <button class="btn-cierre" id="cierreBtn">📊 Cierre de Mes</button>
     <button class="btn-logout" id="logoutBtn">
       ⎋ Salir
     </button>
@@ -815,6 +859,143 @@
         placeholder="sk-ant-api..." autocomplete="off">
     </div>
     <button class="btn-save" id="saveApiKey">Guardar clave</button>
+  </div>
+</div>
+
+<!-- ═══ CIERRE DE MES MODAL ══════════════════════════ -->
+<div class="modal-backdrop" id="cierreModalBackdrop">
+  <div class="modal" style="max-width:680px;width:95%;max-height:90vh;overflow-y:auto">
+    <button class="modal-close" id="cierreModalClose" title="Cerrar">✕</button>
+    <h3>📊 Cierre de Mes</h3>
+    <p>Ingresa los indicadores reales del mes. Se guardarán en Firebase y alimentarán la campaña del mes siguiente.</p>
+
+    <div class="form-grid" style="margin-top:20px">
+
+      <!-- Bloque 1: Red y Mes -->
+      <div class="form-group">
+        <label class="form-label">Mes que cierra</label>
+        <select id="cMes" class="form-control">
+          <option value="">Seleccionar...</option>
+          <option>Enero</option><option>Febrero</option><option>Marzo</option>
+          <option>Abril</option><option>Mayo</option><option>Junio</option>
+          <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+          <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cliente (slug)</label>
+        <input type="text" id="cCliente" class="form-control" placeholder="ej: cancha-oficial">
+      </div>
+
+      <!-- Bloque 2: Instagram -->
+      <div class="form-group full cierre-block" style="background:rgba(131,58,180,.08)">
+        <div class="cierre-block-title">Instagram</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Seguidores inicio del mes</label>
+            <input type="number" id="cIgSegInicio" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seguidores fin del mes</label>
+            <input type="number" id="cIgSegFin" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alcance total del mes</label>
+            <input type="number" id="cIgAlcance" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Interacciones totales</label>
+            <input type="number" id="cIgInteracciones" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con mejor desempeño</label>
+            <input type="text" id="cIgMejorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con peor desempeño</label>
+            <input type="text" id="cIgPeorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque 3: Facebook -->
+      <div class="form-group full cierre-block" style="background:rgba(24,119,242,.08)">
+        <div class="cierre-block-title">Facebook</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Seguidores inicio del mes</label>
+            <input type="number" id="cFbSegInicio" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seguidores fin del mes</label>
+            <input type="number" id="cFbSegFin" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alcance total del mes</label>
+            <input type="number" id="cFbAlcance" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Interacciones totales</label>
+            <input type="number" id="cFbInteracciones" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con mejor desempeño</label>
+            <input type="text" id="cFbMejorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con peor desempeño</label>
+            <input type="text" id="cFbPeorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque 4: TikTok -->
+      <div class="form-group full cierre-block" style="background:rgba(0,0,0,.08)">
+        <div class="cierre-block-title">TikTok</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Seguidores inicio del mes</label>
+            <input type="number" id="cTkSegInicio" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seguidores fin del mes</label>
+            <input type="number" id="cTkSegFin" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alcance total del mes</label>
+            <input type="number" id="cTkAlcance" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Interacciones totales</label>
+            <input type="number" id="cTkInteracciones" class="form-control" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con mejor desempeño</label>
+            <input type="text" id="cTkMejorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Post con peor desempeño</label>
+            <input type="text" id="cTkPeorPost" class="form-control" placeholder="describe brevemente">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque 5: General -->
+      <div class="form-group full">
+        <label class="form-label">Mensajes recibidos por WhatsApp</label>
+        <input type="number" id="cWhatsappMensajes" class="form-control" placeholder="0">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Observación general del mes</label>
+        <textarea id="cObservacion" class="form-control" rows="3"
+          placeholder="Qué pasó este mes, contexto importante, cambios en el negocio"></textarea>
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <button class="btn-generate" id="saveCierreBtn" style="width:100%;margin-top:8px">
+      💾 Guardar Cierre de Mes
+    </button>
   </div>
 </div>
 
@@ -895,6 +1076,51 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- Continuity Card (Mes 2+) -->
+  <div id="continuityCard" class="card continuity-card hidden">
+    <div class="section-title">
+      Contexto del Mes
+      <span class="continuity-badge">MES 2+</span>
+    </div>
+    <p style="font-size:.78rem;color:var(--gold-l);margin-bottom:18px;margin-top:-8px;">
+      Solo aparece cuando hay historial previo del cliente
+    </p>
+    <form id="continuityForm" class="form-grid" autocomplete="off">
+      <div class="form-group full">
+        <label class="form-label">Objetivo Principal del Mes</label>
+        <select id="fObjetivoMes" class="form-control">
+          <option value="">Seleccionar...</option>
+          <option>Aumentar tráfico a tienda</option>
+          <option>Crecer seguidores</option>
+          <option>Generar leads por WhatsApp</option>
+          <option>Lanzar producto nuevo</option>
+          <option>Temporada o evento especial</option>
+          <option>Mantenimiento de presencia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Promoción o Evento del Mes</label>
+        <input type="text" id="fPromocionMes" class="form-control"
+          placeholder="Ej: Hot Sale, playoffs NFL, liquidación de temporada">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contexto Externo del Mes</label>
+        <input type="text" id="fTemporada" class="form-control"
+          placeholder="Ej: Playoffs NFL, regreso a clases, Día del Padre, temporada alta">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Qué funcionó el mes anterior</label>
+        <textarea id="fQueRepetir" class="form-control" rows="2"
+          placeholder="Ej: Los posts de unboxing tuvieron más engagement, los reels de jerseys por equipo generaron mensajes"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Instrucción Especial para este Mes</label>
+        <textarea id="fInstruccion" class="form-control" rows="2"
+          placeholder="Ej: Enfocarnos más en NBA esta quincena, evitar hablar de precios directamente"></textarea>
+      </div>
+    </form>
   </div>
 
   <!-- Generate Button -->
