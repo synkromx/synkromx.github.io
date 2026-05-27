@@ -82,6 +82,7 @@ function initApp() {
   setupGenerateBtn();
   initStatusSection();
   setupCierreModal();
+  setupClientSelector();
   $('demoBtn').addEventListener('click', loadDemoData);
 
   const key = localStorage.getItem('synkro_api_key');
@@ -205,6 +206,7 @@ function processFile(file) {
       const data = JSON.parse(ev.target.result);
       clientData = data;
       renderClientPreview(data);
+      saveBriefFirebase(data);
       dropZone.classList.add('has-file');
       noClientWarn.classList.add('hidden');
       showToast('✓ Cliente cargado correctamente', 'success');
@@ -213,6 +215,19 @@ function processFile(file) {
     }
   };
   reader.readAsText(file);
+}
+
+async function saveBriefFirebase(data) {
+  try {
+    const slug = slugify(
+      data.identidad?.nombre_comercial || data.identidad?.nombre ||
+      data.negocio?.nombre || data.nombre || 'cliente'
+    );
+    if (!slug) return;
+    await db.ref(`clientes/${slug}/brief`).set(data);
+  } catch (e) {
+    console.warn('[Synkro] saveBriefFirebase error:', e.message);
+  }
 }
 
 function renderClientPreview(data) {
@@ -2629,4 +2644,88 @@ async function fetchCierreMes(slug, mes, año) {
   } catch (e) {
     return null;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MÓDULO SELECTOR DE CLIENTE ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function loadClientList() {
+  try {
+    const snap = await db.ref('clientes').once('value');
+    const data = snap.val();
+    if (!data) return [];
+    return Object.keys(data).map(slug => ({
+      slug,
+      nombre: data[slug].brief?.identidad?.nombre_comercial
+            || data[slug].brief?.identidad?.nombre
+            || slug,
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+async function loadBriefFromFirebase(slug) {
+  try {
+    const snap = await db.ref(`clientes/${slug}/brief`).once('value');
+    return snap.val();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function setupClientSelector() {
+  const select = document.getElementById('clientSelector');
+  if (!select) return;
+
+  const clients = await loadClientList();
+  select.innerHTML = '<option value="">— Seleccionar cliente existente —</option>';
+  clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value       = c.slug;
+    opt.textContent = c.nombre;
+    select.appendChild(opt);
+  });
+
+  select.addEventListener('change', async function () {
+    if (!this.value) return;
+
+    const brief = await loadBriefFromFirebase(this.value);
+    if (!brief) { showToast('No se encontró el brief de este cliente', 'error'); return; }
+
+    clientData = brief;
+    renderClientPreview(brief);
+    dropZone.classList.add('has-file');
+    noClientWarn.classList.add('hidden');
+
+    const historial = await fetchHistorial(brief);
+    if (historial && historial.length > 0) {
+      showContinuityCard();
+      const slug    = slugify(brief.identidad?.nombre_comercial || brief.identidad?.nombre || brief.negocio?.nombre || brief.nombre || '');
+      const MESES   = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const mesActual = document.getElementById('fMes')?.value || '';
+      const idx     = MESES.indexOf(mesActual.toLowerCase());
+      const mesAnterior = idx > 0 ? MESES[idx - 1] : MESES[11];
+      const añoCierre   = idx > 0 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+      const cierre  = await fetchCierreMes(slug, mesAnterior, añoCierre);
+      updateCierreIndicator(cierre, mesAnterior);
+    }
+
+    showToast('Cliente cargado: ' + (brief.identidad?.nombre_comercial || brief.identidad?.nombre || this.value), 'success');
+  });
+}
+
+function updateCierreIndicator(cierre, mesAnterior) {
+  const indicator = document.getElementById('cierreIndicator');
+  if (!indicator) return;
+  const mes = mesAnterior.charAt(0).toUpperCase() + mesAnterior.slice(1);
+  if (cierre) {
+    indicator.innerHTML = `✅ Cierre de ${mes} cargado — métricas incluidas en el prompt`;
+    indicator.className = 'cierre-indicator cierre-ok';
+  } else {
+    indicator.innerHTML = `⚠️ Sin cierre de ${mes} — puedes guardarlo en 📊 Cierre de Mes o continuar sin métricas`;
+    indicator.className = 'cierre-indicator cierre-warn';
+  }
+  indicator.classList.remove('hidden');
 }

@@ -809,6 +809,49 @@
       text-transform: uppercase; color: var(--gold-l);
       margin-bottom: 10px;
     }
+
+    /* ─── CLIENT SELECTOR ────────────────────────────────── */
+    .client-selector-wrap { margin-bottom: 16px; }
+    .client-selector-label {
+      font-size: .72rem; font-weight: 600; letter-spacing: .06em;
+      color: #b8860b; text-transform: uppercase;
+      margin-bottom: 6px; display: block;
+    }
+    .client-selector {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(184,134,11,.3);
+      border-radius: 8px;
+      color: #e8e8e8;
+      padding: 10px 12px;
+      font-size: .85rem;
+      cursor: pointer;
+    }
+    .client-selector:focus { outline: none; border-color: #b8860b; }
+    .divider-or {
+      text-align: center; font-size: .75rem;
+      color: rgba(255,255,255,.3);
+      margin: 12px 0; letter-spacing: .1em;
+    }
+
+    /* ─── CIERRE INDICATOR ───────────────────────────────── */
+    .cierre-indicator {
+      display: none;
+      padding: 8px 12px; border-radius: 6px;
+      font-size: .78rem; margin-top: 12px; line-height: 1.5;
+    }
+    .cierre-indicator.cierre-ok {
+      background: rgba(13,110,99,.2);
+      border: 1px solid #0d6e63;
+      color: #4db8ad;
+    }
+    .cierre-indicator.cierre-warn {
+      background: rgba(184,134,11,.15);
+      border: 1px solid rgba(184,134,11,.4);
+      color: #b8860b;
+    }
+    .cierre-indicator.hidden { display: none; }
+    .cierre-indicator:not(.hidden) { display: block; }
   </style>
 </head>
 <body>
@@ -1008,6 +1051,13 @@
     <!-- JSON Upload Card -->
     <div class="card">
       <div class="section-title">Perfil del Cliente</div>
+      <div class="client-selector-wrap">
+        <span class="client-selector-label">Cliente existente</span>
+        <select id="clientSelector" class="client-selector">
+          <option value="">— Seleccionar cliente existente —</option>
+        </select>
+      </div>
+      <div class="divider-or">— o arrastra un JSON nuevo —</div>
       <div id="dropZone" class="drop-zone" title="Haz clic o arrastra tu JSON aquí">
         <input type="file" id="fileInput" accept=".json,application/json">
         <span class="dz-icon">📂</span>
@@ -1087,6 +1137,7 @@
     <p style="font-size:.78rem;color:var(--gold-l);margin-bottom:18px;margin-top:-8px;">
       Solo aparece cuando hay historial previo del cliente
     </p>
+    <div id="cierreIndicator" class="cierre-indicator hidden"></div>
     <form id="continuityForm" class="form-grid" autocomplete="off">
       <div class="form-group full">
         <label class="form-label">Objetivo Principal del Mes</label>
