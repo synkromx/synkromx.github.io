@@ -1085,6 +1085,32 @@
   </div>
 </div>
 
+<!-- ═══ UPGRADE / TOP-UP MODAL ════════════════════════ -->
+<div class="modal-backdrop" id="upgradeModalBackdrop">
+  <div class="modal" style="max-width:520px;width:95%;text-align:center">
+    <button class="modal-close" id="upgradeCancelBtn" title="Cancelar">✕</button>
+    <h3 style="margin-bottom:10px">⬆️ Upgrade detectado</h3>
+    <p style="font-size:.85rem;color:var(--gold-l);margin-bottom:20px;line-height:1.5">
+      Ya existe una campaña <strong id="upgradePkgFrom"></strong> guardada este mes.<br>
+      Estás generando con el paquete <strong id="upgradePkgTo"></strong>.<br>
+      ¿Cómo quieres proceder?
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn-generate" id="upgradeTopupBtn" style="width:100%">
+        ⚡ TOP-UP — Solo generar las piezas adicionales
+      </button>
+      <button class="btn-generate" id="upgradeFullBtn"
+        style="width:100%;background:var(--gold-d);color:#fff">
+        🔄 Campaña completa — Regenerar todo desde cero
+      </button>
+      <button class="btn-secondary" id="upgradeCancelBtnAlt"
+        style="width:100%;margin-top:4px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:transparent;color:var(--text-sec)">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MAIN ═════════════════════════════════════════ -->
 <main>
 

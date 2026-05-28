@@ -341,6 +341,21 @@ async function generateCampaign() {
     const month      = getMonthData();
     const continuity = getContinuityData();
 
+    // ── TOP-UP: detectar si ya existe campaña y ofrecer upgrade ──────────────
+    const currentSlug = slugify(clientData?.identidad?.nombre_comercial || clientData?.identidad?.nombre || clientData?.negocio?.nombre || clientData?.nombre || '');
+    const existingCampaign = await checkExistingCampaign(currentSlug, month.mes, new Date().getFullYear());
+    const existingPkg = existingCampaign?._package || null;
+    const pkgOrder = ['starter', 'profesional', 'premium'];
+    const isUpgrade = existingPkg && pkgOrder.indexOf(pkg) > pkgOrder.indexOf(existingPkg);
+    if (isUpgrade) {
+      setLoading(false);
+      const confirmed = await showUpgradeModal(existingPkg, pkg);
+      if (confirmed === 'topup') {
+        return generateTopUp(clientData, existingCampaign, existingPkg, pkg);
+      }
+      setLoading(true, 'Motor Synkro — preparando...');
+    }
+
     setLoading(true, `Motor Synkro · Paquete ${pkg} · 0/${total}`);
     campaignData = { _package: pkg };
 
@@ -1500,7 +1515,12 @@ function saveHistorialFirebase(data) {
   const entrada = {
     mes:              month.mes,
     año:              new Date().getFullYear(),
-    servicio:         month.servicio,
+    servicio:         month.servicio  || '',
+    promocion:        month.promocion || '',
+    fecha:            month.fecha     || '',
+    objecion:         month.objecion  || '',
+    pregunta:         month.pregunta  || '',
+    nota:             month.nota      || '',
     anguloNarrativo:  e.anguloNarrativo  || m.anguloCampana   || '',
     mensajeClave:     e.mensajeClave     || '',
     emocionPrincipal: e.emocionPrincipal || m.emocionPrincipal || '',
@@ -2793,6 +2813,16 @@ async function fetchCierreMes(slug, mes, año) {
   }
 }
 
+async function checkExistingCampaign(slug, mes, año) {
+  try {
+    const key  = mes.toLowerCase() + '-' + año;
+    const snap = await db.ref(`clientes/${slug}/historial/${key}`).once('value');
+    return snap.val() || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ── MÓDULO SELECTOR DE CLIENTE ────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
@@ -2893,10 +2923,16 @@ async function prefillMonthData(slug, mes) {
 
     const fServicio  = document.getElementById('fServicio');
     const fPromocion = document.getElementById('fPromocion');
+    const fFecha     = document.getElementById('fFecha');
+    const fObjecion  = document.getElementById('fObjecion');
+    const fPregunta  = document.getElementById('fPregunta');
     const fNota      = document.getElementById('fNota');
 
     if (fServicio  && h.servicio)  fServicio.value  = h.servicio;
     if (fPromocion && h.promocion) fPromocion.value = h.promocion;
+    if (fFecha     && h.fecha)     fFecha.value     = h.fecha;
+    if (fObjecion  && h.objecion)  fObjecion.value  = h.objecion;
+    if (fPregunta  && h.pregunta)  fPregunta.value  = h.pregunta;
     if (fNota      && h.nota)      fNota.value      = h.nota;
 
     showToast('Datos de mes anterior cargados', 'info');
@@ -2917,4 +2953,185 @@ function updateCierreIndicator(cierre, mesAnterior) {
     indicator.className = 'cierre-indicator cierre-warn';
   }
   indicator.classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO TOP-UP — Upgrade inteligente de paquete
+// ─────────────────────────────────────────────────────────────────────────────
+
+function showUpgradeModal(fromPkg, toPkg) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('upgradeModalBackdrop');
+    if (!backdrop) { resolve(null); return; }
+
+    const fromEl = document.getElementById('upgradePkgFrom');
+    const toEl   = document.getElementById('upgradePkgTo');
+    if (fromEl) fromEl.textContent = fromPkg.charAt(0).toUpperCase() + fromPkg.slice(1);
+    if (toEl)   toEl.textContent   = toPkg.charAt(0).toUpperCase() + toPkg.slice(1);
+
+    backdrop.classList.add('open');
+
+    const fullBtn      = document.getElementById('upgradeFullBtn');
+    const topupBtn     = document.getElementById('upgradeTopupBtn');
+    const cancelBtn    = document.getElementById('upgradeCancelBtn');
+    const cancelBtnAlt = document.getElementById('upgradeCancelBtnAlt');
+
+    function onFull()   { cleanup(); resolve('full'); }
+    function onTopup()  { cleanup(); resolve('topup'); }
+    function onCancel() { cleanup(); resolve(null); }
+
+    function cleanup() {
+      backdrop.classList.remove('open');
+      if (fullBtn)      fullBtn.removeEventListener('click', onFull);
+      if (topupBtn)     topupBtn.removeEventListener('click', onTopup);
+      if (cancelBtn)    cancelBtn.removeEventListener('click', onCancel);
+      if (cancelBtnAlt) cancelBtnAlt.removeEventListener('click', onCancel);
+    }
+
+    if (fullBtn)      fullBtn.addEventListener('click', onFull);
+    if (topupBtn)     topupBtn.addEventListener('click', onTopup);
+    if (cancelBtn)    cancelBtn.addEventListener('click', onCancel);
+    if (cancelBtnAlt) cancelBtnAlt.addEventListener('click', onCancel);
+  });
+}
+
+async function generateTopUp(clientData, existingCampaign, fromPkg, toPkg) {
+  const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
+  if (!apiKey) { showToast('Falta API Key', 'error'); return; }
+
+  setLoading(true, 'TOP-UP — calculando diferencia de piezas…');
+
+  try {
+    const pkg      = toPkg;
+    const prompts  = PACKAGE_PROMPTS[pkg];
+    const month    = getMonthData();
+    const continuity = getContinuityData();
+
+    const PKG_POSTS = { starter: 8, profesional: 16, premium: 20 };
+    const extraPosts = (PKG_POSTS[toPkg] || 0) - (PKG_POSTS[fromPkg] || 0);
+
+    if (extraPosts <= 0) {
+      showToast('No hay piezas adicionales que generar', 'info');
+      setLoading(false);
+      return;
+    }
+
+    // Reutilizar maestro del historial o regenerarlo
+    setLoading(true, 'TOP-UP 1/4 — Contexto maestro…');
+    const historial  = await fetchHistorial(clientData);
+    const clientSlug = slugify(clientData?.identidad?.nombre_comercial || clientData?.identidad?.nombre || clientData?.negocio?.nombre || clientData?.nombre || '');
+    const MESES          = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const mesAnteriorIdx = MESES.indexOf(month.mes.toLowerCase());
+    const mesAnterior    = mesAnteriorIdx > 0 ? MESES[mesAnteriorIdx - 1] : 'diciembre';
+    const añoCierre      = mesAnteriorIdx > 0 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+    const cierreMesAnterior = await fetchCierreMes(clientSlug, mesAnterior, añoCierre);
+
+    const maestroRaw  = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial, continuity, cierreMesAnterior), 2048);
+    const maestroText = maestroRaw.content[0].text;
+    const maestro     = extractJson(maestroText) || { resumen: maestroText };
+
+    // Posts existentes del historial
+    const existingPosts = existingCampaign?.posts || null;
+
+    // Generar posts adicionales
+    setLoading(true, `TOP-UP 2/4 — Generando ${extraPosts} posts adicionales…`);
+    const topUpPostsRaw  = await callClaude(apiKey, buildTopUpPostsPrompt(clientData, month, maestro, extraPosts, existingPosts, toPkg), 16000);
+    const topUpPostsText = topUpPostsRaw.content[0].text;
+    const newPosts       = parsePostsFromDelimiters(topUpPostsText);
+
+    // Merge con posts existentes
+    const mergedPosts = {
+      instagram: [...(existingPosts?.instagram || []), ...(newPosts?.instagram || [])],
+      facebook:  [...(existingPosts?.facebook  || []), ...(newPosts?.facebook  || [])],
+      tiktok:    [...(existingPosts?.tiktok    || []), ...(newPosts?.tiktok    || [])],
+    };
+
+    const campaignData = {
+      ...existingCampaign,
+      _package: toPkg,
+      maestro,
+      posts: mergedPosts,
+    };
+
+    // Prompts extra del paquete superior (estrategia, reel, etc.)
+    const fromPrompts = PACKAGE_PROMPTS[fromPkg] || [];
+    const toPrompts   = PACKAGE_PROMPTS[toPkg]   || [];
+    const extraPrompts = toPrompts.filter(p => !fromPrompts.includes(p) && p !== 'maestro' && p !== 'posts');
+
+    const extraTotal = extraPrompts.length;
+    for (let i = 0; i < extraPrompts.length; i++) {
+      const pName = extraPrompts[i];
+      setLoading(true, `TOP-UP ${i + 3}/${extraTotal + 2} — ${PROMPT_LABELS[pName] || pName}…`);
+      const raw = await callClaude(
+        apiKey,
+        buildPromptFor(pName, clientData, month, campaignData),
+        pName === 'calendarioPublicacion' ? 8192 : 4096
+      );
+      campaignData[pName] = extractJson(raw.content[0].text);
+    }
+
+    campaignData._clientSlug = clientSlug;
+    campaignData._mes = (month.mes || 'mes').toLowerCase();
+
+    renderCampaign(campaignData);
+    generateCampaignExports(campaignData);
+    if (campaignData.posts) setupApprovalButton();
+    showToast(`✦ TOP-UP completado — ${fromPkg} → ${toPkg} con ${extraPosts} posts nuevos`, 'success');
+
+  } catch (err) {
+    console.error(err);
+    showToast(`Error TOP-UP: ${err.message}`, 'error');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function buildTopUpPostsPrompt(client, month, maestro, extraPosts, existingPosts, pkg) {
+  const id  = client?.identidad  || {};
+  const neg = client?.negocio    || {};
+  const aud = client?.audiencia  || {};
+  const voz = client?.voz_tono   || {};
+
+  const nombre   = id.nombre_comercial || id.nombre || neg.nombre || 'la marca';
+  const sector   = neg.sector || neg.industria || '';
+  const tono     = voz.tono || voz.personalidad || '';
+  const publico  = aud.descripcion || aud.perfil || '';
+
+  const maestroStr = typeof maestro === 'string' ? maestro : JSON.stringify(maestro, null, 2);
+
+  let existingStr = '';
+  if (existingPosts) {
+    const sample = [
+      ...(existingPosts.instagram || []).slice(0, 3).map((p, i) => `IG${i+1}: ${p.texto?.substring(0, 80)}…`),
+      ...(existingPosts.facebook  || []).slice(0, 2).map((p, i) => `FB${i+1}: ${p.texto?.substring(0, 80)}…`),
+      ...(existingPosts.tiktok    || []).slice(0, 2).map((p, i) => `TK${i+1}: ${p.texto?.substring(0, 80)}…`),
+    ].join('\n');
+    existingStr = `\n## POSTS YA EXISTENTES (no repetir temas)\n${sample}\n`;
+  }
+
+  return `Eres el estratega de contenido de ${nombre}.
+${sector ? `Sector: ${sector}` : ''}
+${tono ? `Tono: ${tono}` : ''}
+${publico ? `Público: ${publico}` : ''}
+
+## CONTEXTO ESTRATÉGICO DEL MES
+${maestroStr}
+${existingStr}
+## TAREA
+Genera EXACTAMENTE ${extraPosts} posts ADICIONALES para completar el paquete ${pkg.toUpperCase()}.
+Estos posts deben complementar los existentes sin repetir temas, ángulos ni formatos ya usados.
+Distribuye los ${extraPosts} posts así según el paquete:
+- Si hay posts de IG, FB y TK, genera proporciones similares a las existentes
+- Prioriza variedad: educativo, entretenimiento, testimonio, oferta, behind the scenes
+
+Usa los siguientes delimitadores EXACTOS — sin texto adicional fuera de ellos:
+
+POST_IG_N: [texto del post para Instagram]
+HASHTAGS_IG_N: [hashtags IG separados por espacio]
+POST_FB_N: [texto del post para Facebook]
+POST_TK_N: [texto/guión del post para TikTok]
+HASHTAGS_TK_N: [hashtags TK separados por espacio]
+
+Donde N es el número del post CONTINUANDO desde donde quedaron los existentes.
+Genera los ${extraPosts} posts completos ahora.`;
 }
