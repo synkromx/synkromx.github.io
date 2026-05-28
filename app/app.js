@@ -2847,20 +2847,62 @@ async function setupClientSelector() {
     noClientWarn.classList.add('hidden');
 
     const historial = await fetchHistorial(brief);
+    const slug = slugify(brief.identidad?.nombre_comercial || brief.identidad?.nombre || brief.negocio?.nombre || brief.nombre || '');
+
     if (historial && historial.length > 0) {
       showContinuityCard();
-      const slug    = slugify(brief.identidad?.nombre_comercial || brief.identidad?.nombre || brief.negocio?.nombre || brief.nombre || '');
-      const MESES   = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const MESES     = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
       const mesActual = document.getElementById('fMes')?.value || '';
-      const idx     = MESES.indexOf(mesActual.toLowerCase());
+      const idx       = MESES.indexOf(mesActual.toLowerCase());
       const mesAnterior = idx > 0 ? MESES[idx - 1] : MESES[11];
       const añoCierre   = idx > 0 ? new Date().getFullYear() : new Date().getFullYear() - 1;
-      const cierre  = await fetchCierreMes(slug, mesAnterior, añoCierre);
+      const cierre    = await fetchCierreMes(slug, mesAnterior, añoCierre);
       updateCierreIndicator(cierre, mesAnterior);
+    }
+
+    // Pre-llenar campos del mes seleccionado si hay datos guardados
+    const mesActualInicial = document.getElementById('fMes')?.value || '';
+    if (mesActualInicial) prefillMonthData(slug, mesActualInicial);
+
+    // Listener: cuando cambia el mes, volver a buscar datos
+    const fMesEl = document.getElementById('fMes');
+    if (fMesEl && !fMesEl.dataset.prefillBound) {
+      fMesEl.dataset.prefillBound = '1';
+      fMesEl.addEventListener('change', function () {
+        const currentSlug = slugify(
+          clientData?.identidad?.nombre_comercial ||
+          clientData?.identidad?.nombre ||
+          clientData?.negocio?.nombre ||
+          clientData?.nombre || ''
+        );
+        if (currentSlug && this.value) prefillMonthData(currentSlug, this.value);
+      });
     }
 
     showToast('Cliente cargado: ' + (brief.identidad?.nombre_comercial || brief.identidad?.nombre || this.value), 'success');
   });
+}
+
+async function prefillMonthData(slug, mes) {
+  if (!slug || !mes) return;
+  try {
+    const key  = mes.toLowerCase() + '-' + new Date().getFullYear();
+    const snap = await db.ref(`clientes/${slug}/historial/${key}`).once('value');
+    const h    = snap.val();
+    if (!h) return;
+
+    const fServicio  = document.getElementById('fServicio');
+    const fPromocion = document.getElementById('fPromocion');
+    const fNota      = document.getElementById('fNota');
+
+    if (fServicio  && h.servicio)  fServicio.value  = h.servicio;
+    if (fPromocion && h.promocion) fPromocion.value = h.promocion;
+    if (fNota      && h.nota)      fNota.value      = h.nota;
+
+    showToast('Datos de mes anterior cargados', 'info');
+  } catch (e) {
+    console.warn('[Synkro] prefillMonthData error:', e.message);
+  }
 }
 
 function updateCierreIndicator(cierre, mesAnterior) {
