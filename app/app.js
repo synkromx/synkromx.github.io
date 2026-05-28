@@ -387,6 +387,9 @@ async function generateCampaign() {
       campaignData[pName] = extractJson(raw.content[0].text);
     }
 
+    campaignData._clientSlug = slugify(clientData?.identidad?.nombre_comercial || clientData?.identidad?.nombre || clientData?.negocio?.nombre || clientData?.nombre || 'cliente');
+    campaignData._mes = (getMonthData().mes || 'mes').toLowerCase();
+
     renderCampaign(campaignData);
     generateCampaignExports(campaignData);
     if (campaignData.posts) setupApprovalButton();
@@ -1269,6 +1272,9 @@ function renderCampaign(data) {
   if (data.googleBusiness) grid.appendChild(buildGoogleCard(data.googleBusiness));
   if (data.fichaProduccion) grid.appendChild(buildFichaProduccionCard(data.fichaProduccion));
 
+  const guiaCard = buildGuiaProduccionCard(data);
+  grid.appendChild(guiaCard);
+
   outputSection.classList.add('visible');
   setTimeout(() => outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 }
@@ -2031,6 +2037,133 @@ function buildFichaProduccionCard(ficha) {
     this.textContent = '✓ Copiado';
     this.classList.add('copied');
     setTimeout(() => { this.textContent = 'Copiar JSON'; this.classList.remove('copied'); }, 2000);
+  });
+
+  return wrapper;
+}
+
+// ── Guía de Producción ─────────────────────────────────────────────────────
+function buildGuiaProduccionCard(data) {
+  const posts  = data.posts || {};
+  const ig     = posts.instagram || [];
+  const fb     = posts.facebook  || [];
+  const tk     = posts.tiktok    || [];
+  const cliente    = data._clientSlug || 'cliente';
+  const mes        = data._mes        || 'mes';
+  const storageKey = 'guia_' + cliente + '_' + mes;
+
+  let saved = {};
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {}
+
+  const reel = data.reelEducativo;
+  const bot  = data.botWhatsapp;
+
+  let rows = '';
+  let idx  = 0;
+
+  function addRows(redNombre, redColor, items, tipo) {
+    items.forEach(function (item, i) {
+      const id      = 'chk_' + redNombre + '_' + i;
+      const checked = saved[id] ? 'checked' : '';
+      const copy    = item.caption || item.post || '';
+      const copyShort = copy.length > 80 ? copy.substring(0, 80) + '...' : copy;
+      rows +=
+        '<tr class="guia-row' + (saved[id] ? ' guia-done' : '') + '" data-id="' + id + '">' +
+          '<td style="text-align:center"><input type="checkbox" class="guia-chk" data-id="' + id + '" data-key="' + storageKey + '" ' + checked + '></td>' +
+          '<td><span class="guia-badge" style="background:' + redColor + '">' + redNombre.toUpperCase() + '</span></td>' +
+          '<td>' + tipo + '</td>' +
+          '<td>1080x1080' + (redNombre === 'tiktok' ? ' / 1080x1920' : '') + '</td>' +
+          '<td class="guia-copy-cell">' + escHtml(copyShort) + '</td>' +
+          '<td><span class="guia-prompt-hint">Usar colores de marca + logo + copy del post</span></td>' +
+        '</tr>';
+      idx++;
+    });
+  }
+
+  addRows('instagram', 'linear-gradient(135deg,#833ab4,#fd1d1d)', ig, 'Post estático');
+  addRows('facebook',  '#1877f2',                                  fb, 'Post estático');
+  addRows('tiktok',    '#010101',                                  tk, 'Video / Reel');
+
+  if (reel) {
+    const id      = 'chk_reel_educativo';
+    const checked = saved[id] ? 'checked' : '';
+    rows +=
+      '<tr class="guia-row' + (saved[id] ? ' guia-done' : '') + '" data-id="' + id + '">' +
+        '<td style="text-align:center"><input type="checkbox" class="guia-chk" data-id="' + id + '" data-key="' + storageKey + '" ' + checked + '></td>' +
+        '<td><span class="guia-badge" style="background:#0d6e63">REEL</span></td>' +
+        '<td>Reel Educativo</td>' +
+        '<td>1080x1920</td>' +
+        '<td class="guia-copy-cell">' + escHtml((reel.titulo || '').substring(0, 80)) + '</td>' +
+        '<td><span class="guia-prompt-hint">Guion completo disponible en tarjeta Reels</span></td>' +
+      '</tr>';
+  }
+
+  if (bot) {
+    const id      = 'chk_bot_whatsapp';
+    const checked = saved[id] ? 'checked' : '';
+    rows +=
+      '<tr class="guia-row' + (saved[id] ? ' guia-done' : '') + '" data-id="' + id + '">' +
+        '<td style="text-align:center"><input type="checkbox" class="guia-chk" data-id="' + id + '" data-key="' + storageKey + '" ' + checked + '></td>' +
+        '<td><span class="guia-badge" style="background:#25d366;color:#000">WA</span></td>' +
+        '<td>Bot WhatsApp</td>' +
+        '<td>Configuración</td>' +
+        '<td class="guia-copy-cell">Flujo de respuestas automáticas</td>' +
+        '<td><span class="guia-prompt-hint">Config completa en tarjeta WhatsApp</span></td>' +
+      '</tr>';
+  }
+
+  const total = idx + (reel ? 1 : 0) + (bot ? 1 : 0);
+  const done  = Object.values(saved).filter(Boolean).length;
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'grid-column: 1/-1;';
+  wrapper.innerHTML =
+    '<div class="platform-card" style="overflow:visible">' +
+      '<div class="platform-bar" style="background:linear-gradient(90deg,#0d6e63,#b8860b)"></div>' +
+      '<div class="platform-header">' +
+        '<div class="platform-icon" style="background:#0d6e63;color:#fff;font-size:1rem">✓</div>' +
+        '<span class="platform-name">Guía de Producción</span>' +
+        '<span id="guiaProgress" class="exports-saved-badge">' + done + ' / ' + total + ' piezas producidas</span>' +
+      '</div>' +
+      '<div class="platform-body" style="gap:0;padding:12px 20px 20px">' +
+        '<p style="font-size:.78rem;color:var(--text-m);margin:0 0 14px">Marca cada pieza conforme la produces. El progreso se guarda automáticamente en este navegador.</p>' +
+        '<div class="fp-table-wrap">' +
+          '<table class="fp-table guia-table">' +
+            '<thead><tr>' +
+              '<th style="width:40px;text-align:center">✓</th>' +
+              '<th>Red</th>' +
+              '<th>Tipo</th>' +
+              '<th>Tamaño</th>' +
+              '<th>Copy (resumen)</th>' +
+              '<th>Nota Visual</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  wrapper.querySelectorAll('.guia-chk').forEach(function (chk) {
+    chk.addEventListener('change', function () {
+      const id  = this.dataset.id;
+      const key = this.dataset.key;
+      try {
+        const current = JSON.parse(localStorage.getItem(key) || '{}');
+        current[id] = this.checked;
+        localStorage.setItem(key, JSON.stringify(current));
+      } catch (e) {}
+
+      const row = wrapper.querySelector('tr[data-id="' + id + '"]');
+      if (row) row.classList.toggle('guia-done', this.checked);
+
+      const allChks  = wrapper.querySelectorAll('.guia-chk');
+      const doneCount = Array.from(allChks).filter(function (c) { return c.checked; }).length;
+      const prog = wrapper.querySelector('#guiaProgress');
+      if (prog) prog.textContent = doneCount + ' / ' + total + ' piezas producidas';
+    });
   });
 
   return wrapper;
