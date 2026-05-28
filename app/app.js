@@ -236,15 +236,15 @@ function renderClientPreview(data) {
   const neg  = data.negocio    || {};
   const marc = data.marca      || {};
 
-  const name = id.nombre || neg.nombre || data.nombre || data.name
-             || data.empresa || id.name || 'Cliente sin nombre';
+  const name = id.nombre_comercial || id.nombre || neg.nombre || data.nombre || 'Cliente sin nombre';
   clientName.textContent = name;
 
   const tags = [];
   const addTag = v => { if (v) tags.push(String(v)); };
 
-  const pkg = data.paquete || neg.paquete || id.paquete;
-  if (pkg) addTag('Paquete: ' + pkg);
+  const pkgRaw = data.paquete || neg.paquete || id.paquete;
+  const pkgLabel = (pkgRaw && (pkgRaw.nombre || pkgRaw)) || '';
+  if (pkgLabel) addTag('Paquete: ' + pkgLabel);
 
   addTag(id.ciudad || data.ciudad);
   addTag(id.industria || neg.industria || data.industria || data.sector);
