@@ -262,6 +262,16 @@ function renderClientPreview(data) {
 
   clientRaw.textContent = JSON.stringify(data, null, 2);
   clientPreview.classList.remove('hidden');
+
+  const pkgOverride = document.getElementById('packageOverride');
+  const pkgDetected = document.getElementById('packageDetected');
+  const pkgSelect   = document.getElementById('packageSelect');
+  if (pkgOverride) pkgOverride.classList.remove('hidden');
+  if (pkgDetected) {
+    const detected = data.paquete?.nombre || data.paquete || data.negocio?.paquete || data.identidad?.paquete || 'No detectado';
+    pkgDetected.textContent = 'Detectado: ' + detected;
+  }
+  if (pkgSelect) pkgSelect.value = '';
 }
 
 function clearClient() {
@@ -391,6 +401,10 @@ async function generateCampaign() {
 }
 
 function detectPackage(data) {
+  const overrideSelect = document.getElementById('packageSelect');
+  if (overrideSelect && overrideSelect.value) {
+    return overrideSelect.value.toLowerCase();
+  }
   if (!data) return 'starter';
   const raw = String(
     data.paquete || data.negocio?.paquete || data.identidad?.paquete || ''

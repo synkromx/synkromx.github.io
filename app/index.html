@@ -852,6 +852,11 @@
     }
     .cierre-indicator.hidden { display: none; }
     .cierre-indicator:not(.hidden) { display: block; }
+
+    /* ─── PACKAGE OVERRIDE ───────────────────────────────── */
+    .package-override { margin-top: 12px; }
+    .package-selector-wrap { display: flex; align-items: center; gap: 10px; }
+    .package-detected { font-size: .75rem; color: rgba(255,255,255,.45); white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -1073,6 +1078,19 @@
         <div class="client-name" id="clientName">—</div>
         <div class="client-tags" id="clientTags"></div>
         <pre class="client-raw" id="clientRaw"></pre>
+      </div>
+
+      <div id="packageOverride" class="package-override hidden">
+        <span class="client-selector-label">Paquete de Servicio</span>
+        <div class="package-selector-wrap">
+          <span id="packageDetected" class="package-detected"></span>
+          <select id="packageSelect" class="client-selector">
+            <option value="">— Usar el del brief —</option>
+            <option value="Starter">Starter</option>
+            <option value="Profesional">Profesional</option>
+            <option value="Premium">Premium</option>
+          </select>
+        </div>
       </div>
 
       <div class="no-client-warn hidden" id="noClientWarn">
