@@ -2837,13 +2837,15 @@ function buildIntelSection(cierreMes, todosCierres) {
     const nombresRedes = { ig: 'Instagram', fb: 'Facebook', tk: 'TikTok' };
     const stats = {};
 
+    const redKeyMap = { ig: 'instagram', fb: 'facebook', tk: 'tiktok' };
     redes.forEach(red => {
       const valores = todosCierres
         .map(c => {
-          const alcance = parseInt(c[`${red}_alcance`]) || 0;
-          const ini = parseInt(c[`${red}_seg_inicio`]) || 0;
-          const fin = parseInt(c[`${red}_seg_fin`]) || 0;
-          const interacciones = parseInt(c[`${red}_interacciones`]) || 0;
+          const rd = c[redKeyMap[red]] || {};
+          const alcance = parseInt(rd.alcance) || 0;
+          const ini = parseInt(rd.seguidoresInicio) || 0;
+          const fin = parseInt(rd.seguidoresFin) || 0;
+          const interacciones = parseInt(rd.interacciones) || 0;
           const engagement = ini > 0 ? ((interacciones / ini) * 100) : 0;
           return { alcance, seguidores: fin - ini, engagement, interacciones };
         })
@@ -2891,7 +2893,7 @@ function buildIntelSection(cierreMes, todosCierres) {
 
     const mejoresPostsHistoricos = {};
     redes.forEach(red => {
-      const posts = todosCierres.map(c => c[`${red}_mejor_post`]).filter(p => p && p.trim().length > 0);
+      const posts = todosCierres.map(c => (c[redKeyMap[red]] || {}).mejorPost).filter(p => p && p.trim().length > 0);
       if (posts.length > 0) mejoresPostsHistoricos[red] = posts;
     });
 
@@ -2931,12 +2933,14 @@ function buildIntelSection(cierreMes, todosCierres) {
     let maxAlcance = 0, canalLider = 'Instagram';
     let maxEngagement = 0, canalEngagementLider = 'Instagram';
 
+    const redKM = { ig: 'instagram', fb: 'facebook', tk: 'tiktok' };
     const metricas = {};
     redes.forEach(red => {
-      const alcance = parseInt(cierreMes[`${red}_alcance`]) || 0;
-      const ini = parseInt(cierreMes[`${red}_seg_inicio`]) || 1;
-      const fin = parseInt(cierreMes[`${red}_seg_fin`]) || 0;
-      const interacciones = parseInt(cierreMes[`${red}_interacciones`]) || 0;
+      const rd = cierreMes[redKM[red]] || {};
+      const alcance = parseInt(rd.alcance) || 0;
+      const ini = parseInt(rd.seguidoresInicio) || 1;
+      const fin = parseInt(rd.seguidoresFin) || 0;
+      const interacciones = parseInt(rd.interacciones) || 0;
       const engagement = parseFloat(((interacciones / ini) * 100).toFixed(1));
       metricas[red] = { alcance, seguidores: fin - ini, engagement, interacciones };
       if (alcance > maxAlcance) { maxAlcance = alcance; canalLider = nombresRedes[red]; }
@@ -2947,8 +2951,9 @@ function buildIntelSection(cierreMes, todosCierres) {
     seccion += `|-----|---------|------------|-------------------|------------|----------|\n`;
     redes.forEach(red => {
       const m = metricas[red];
-      const mejor = cierreMes[`${red}_mejor_post`] || '—';
-      const peor  = cierreMes[`${red}_peor_post`]  || '—';
+      const rd = cierreMes[redKM[red]] || {};
+      const mejor = rd.mejorPost || '—';
+      const peor  = rd.peorPost  || '—';
       seccion += `| ${nombresRedes[red]} | ${m.alcance.toLocaleString()} | ${m.engagement}% | +${m.seguidores} | ${mejor} | ${peor} |\n`;
     });
     seccion += `\n`;
@@ -2966,13 +2971,13 @@ function buildIntelSection(cierreMes, todosCierres) {
       }
     });
     redes.forEach(red => {
-      const mejor = cierreMes[`${red}_mejor_post`];
+      const mejor = (cierreMes[redKM[red]] || {}).mejorPost;
       if (mejor && mejor.trim()) {
         seccion += `${n++}. ${nombresRedes[red]} — replicar estructura del mejor post: "${mejor}".\n`;
       }
     });
     redes.forEach(red => {
-      const peor = cierreMes[`${red}_peor_post`];
+      const peor = (cierreMes[redKM[red]] || {}).peorPost;
       if (peor && peor.trim()) {
         seccion += `${n++}. ${nombresRedes[red]} — evitar el formato/contexto del peor post: "${peor}".\n`;
       }
@@ -3776,12 +3781,14 @@ async function generarReporteAcumulado(slug, mesInicio, anioInicio, mesFin, anio
     totales[red] = { alcanceTotal: 0, interaccionesTotal: 0, seguidoresGanados: 0, mesesConDatos: 0 };
   });
 
+  const redKM2 = { ig: 'instagram', fb: 'facebook', tk: 'tiktok' };
   cierresFiltrados.forEach(c => {
     redes.forEach(red => {
-      const alcance = parseInt(c[`${red}_alcance`]) || 0;
-      const ini = parseInt(c[`${red}_seg_inicio`]) || 1;
-      const fin = parseInt(c[`${red}_seg_fin`]) || 0;
-      const interacciones = parseInt(c[`${red}_interacciones`]) || 0;
+      const rd = c[redKM2[red]] || {};
+      const alcance = parseInt(rd.alcance) || 0;
+      const ini = parseInt(rd.seguidoresInicio) || 1;
+      const fin = parseInt(rd.seguidoresFin) || 0;
+      const interacciones = parseInt(rd.interacciones) || 0;
       if (alcance > 0) {
         totales[red].alcanceTotal += alcance;
         totales[red].interaccionesTotal += interacciones;
@@ -3800,7 +3807,7 @@ async function generarReporteAcumulado(slug, mesInicio, anioInicio, mesFin, anio
   const labelsEvolucion = cierresFiltrados.map(c => c.mes.charAt(0).toUpperCase() + c.mes.slice(1, 3));
   const datasetsEvolucion = JSON.stringify(redes.map(red => ({
     label: nombresRedes[red],
-    data: cierresFiltrados.map(c => parseInt(c[`${red}_alcance`]) || 0),
+    data: cierresFiltrados.map(c => parseInt((c[redKM2[red]] || {}).alcance) || 0),
     borderColor: red === 'ig' ? '#E1306C' : red === 'fb' ? '#0d6e63' : '#010101',
     backgroundColor: (red === 'ig' ? '#E1306C22' : red === 'fb' ? '#0d6e6322' : '#01010122'),
     tension: 0.3, fill: false, pointRadius: 4
@@ -3815,9 +3822,9 @@ async function generarReporteAcumulado(slug, mesInicio, anioInicio, mesFin, anio
   </tr>`).join('');
 
   const tablaHistorial = cierresFiltrados.map(c => {
-    const igA = parseInt(c['ig_alcance']) || 0;
-    const fbA = parseInt(c['fb_alcance']) || 0;
-    const tkA = parseInt(c['tk_alcance']) || 0;
+    const igA = parseInt((c.instagram || {}).alcance) || 0;
+    const fbA = parseInt((c.facebook  || {}).alcance) || 0;
+    const tkA = parseInt((c.tiktok    || {}).alcance) || 0;
     return `<tr>
       <td>${c.mes.charAt(0).toUpperCase() + c.mes.slice(1)} ${c.anio}</td>
       <td>${igA.toLocaleString()}</td><td>${fbA.toLocaleString()}</td><td>${tkA.toLocaleString()}</td>
