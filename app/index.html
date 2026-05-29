@@ -927,6 +927,9 @@
       API Key
     </button>
     <button class="btn-cierre" id="cierreBtn">📊 Cierre de Mes</button>
+    <button class="btn-cierre" id="btnReportesHistoricos"
+      onclick="abrirModalReportes()"
+      style="display:none;background:var(--teal,#0d6e63)">📁 Reportes</button>
     <button class="btn-logout" id="logoutBtn">
       ⎋ Salir
     </button>
@@ -1372,5 +1375,105 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
+
+<!-- ═══ REPORTES HISTÓRICOS MODAL ══════════════════════════ -->
+<div id="reportesModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; overflow-y:auto;">
+  <div style="background:white; max-width:520px; margin:60px auto; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+
+    <div style="background:#0f2847; padding:24px 28px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 style="color:#f0c040; font-family:'Playfair Display',serif; margin:0; font-size:1.2rem;">📁 Reportes del Cliente</h2>
+        <p id="reportesClienteNombre" style="color:rgba(255,255,255,.7); margin:4px 0 0; font-size:.85rem;"></p>
+      </div>
+      <button onclick="cerrarModalReportes()" style="background:none; border:none; color:white; font-size:1.4rem; cursor:pointer;">✕</button>
+    </div>
+
+    <div style="padding:28px;">
+
+      <!-- Reporte de un mes específico -->
+      <div style="border:2px solid #0d6e63; border-radius:12px; padding:20px; margin-bottom:20px;">
+        <h3 style="color:#0f2847; margin:0 0 16px; font-size:1rem;">📄 Reporte de un mes específico</h3>
+        <p style="font-size:.82rem; color:#666; margin-bottom:16px;">Genera el reporte HTML de cualquier mes que tenga cierre guardado.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Mes</label>
+            <select id="reporteMesSelect" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="enero">Enero</option><option value="febrero">Febrero</option>
+              <option value="marzo">Marzo</option><option value="abril">Abril</option>
+              <option value="mayo" selected>Mayo</option><option value="junio">Junio</option>
+              <option value="julio">Julio</option><option value="agosto">Agosto</option>
+              <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
+              <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Año</label>
+            <select id="reporteAnioSelect" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="ejecutarReporteMes()" style="width:100%; padding:10px; background:#0f2847; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:.9rem;">
+          📥 Descargar Reporte del Mes
+        </button>
+      </div>
+
+      <!-- Reporte acumulado por periodo -->
+      <div style="border:2px solid #b8860b; border-radius:12px; padding:20px;">
+        <h3 style="color:#0f2847; margin:0 0 16px; font-size:1rem;">📊 Reporte acumulado por periodo</h3>
+        <p style="font-size:.82rem; color:#666; margin-bottom:16px;">Consolida varios meses en un reporte con gráfica de evolución.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px;">
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Desde (mes)</label>
+            <select id="acumDesde" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="enero">Enero</option><option value="febrero">Febrero</option>
+              <option value="marzo" selected>Marzo</option><option value="abril">Abril</option>
+              <option value="mayo">Mayo</option><option value="junio">Junio</option>
+              <option value="julio">Julio</option><option value="agosto">Agosto</option>
+              <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
+              <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Año</label>
+            <select id="acumDesdeAnio" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="2026" selected>2026</option><option value="2027">2027</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Hasta (mes)</label>
+            <select id="acumHasta" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="enero">Enero</option><option value="febrero">Febrero</option>
+              <option value="marzo">Marzo</option><option value="abril">Abril</option>
+              <option value="mayo" selected>Mayo</option><option value="junio">Junio</option>
+              <option value="julio">Julio</option><option value="agosto">Agosto</option>
+              <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
+              <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.8rem; color:#555; display:block; margin-bottom:4px;">Año</label>
+            <select id="acumHastaAnio" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-family:'DM Sans',sans-serif;">
+              <option value="2026" selected>2026</option><option value="2027">2027</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="ejecutarReporteAcumulado()" style="width:100%; padding:10px; background:#b8860b; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:.9rem;">
+          📥 Descargar Reporte Acumulado
+        </button>
+      </div>
+
+      <!-- Lista de meses disponibles -->
+      <div id="mesesDisponiblesWrap" style="margin-top:20px; background:#f8f9fa; border-radius:8px; padding:14px; display:none;">
+        <p style="font-size:.8rem; color:#555; margin:0 0 8px;"><strong>Cierres guardados para este cliente:</strong></p>
+        <div id="mesesDisponiblesList" style="font-size:.82rem; color:#333; line-height:1.8;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
 </body>
 </html>

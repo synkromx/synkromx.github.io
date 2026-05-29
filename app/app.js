@@ -45,9 +45,10 @@ const db   = firebase.database();
 const auth = firebase.auth();
 
 // ── State ──────────────────────────────────────────────────────────────────
-let clientData     = null;
-let campaignData   = null;
-let cachedSessions = [];
+let clientData        = null;
+let campaignData      = null;
+let cachedSessions    = [];
+let currentClientSlug = null;
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -368,9 +369,21 @@ async function generateCampaign() {
     const mesAnteriorIdx  = MESES.indexOf(month.mes.toLowerCase());
     const mesAnterior     = mesAnteriorIdx > 0 ? MESES[mesAnteriorIdx - 1] : 'diciembre';
     const añoCierre       = mesAnteriorIdx > 0 ? new Date().getFullYear() : new Date().getFullYear() - 1;
-    const cierreMesAnterior = await fetchCierreMes(clientSlug, mesAnterior, añoCierre);
 
-    const maestroRaw = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial, continuity, cierreMesAnterior), 2048);
+    let cierreMesAnterior = null;
+    let todosCierresHistoricos = [];
+    try {
+      [cierreMesAnterior, todosCierresHistoricos] = await Promise.all([
+        fetchCierreMes(clientSlug, mesAnterior, añoCierre),
+        fetchTodosCierres(clientSlug)
+      ]);
+    } catch(e) {
+      console.warn('[Synkro] Error cargando historial de cierres:', e);
+    }
+
+    const intelSection = buildIntelSection(cierreMesAnterior, todosCierresHistoricos);
+
+    const maestroRaw = await callClaude(apiKey, buildMaestroPrompt(clientData, month, historial, continuity, intelSection), 2048);
     const maestroText = maestroRaw.content[0].text;
     campaignData.maestro = extractJson(maestroText) || { resumen: maestroText };
 
@@ -552,7 +565,7 @@ ${bloques}`;
 }
 
 // ── PROMPT 1: Maestro ──────────────────────────────────────────────────────
-function buildMaestroPrompt(client, month, historial = [], continuity = {}, cierre = null) {
+function buildMaestroPrompt(client, month, historial = [], continuity = {}, intelSection = '') {
   const historialSection = buildHistorialSection(historial, month);
 
   const hasContinuity = continuity.objetivoMes || continuity.instruccion || continuity.queRepetir;
@@ -570,7 +583,7 @@ REGLAS para este mes:
 - La instrucción especial tiene precedencia sobre cualquier decisión de tono o enfoque
 ` : '';
 
-  const cierreSection = buildIntelSection(cierre);
+  const cierreSection = intelSection;
 
   return `Eres el estratega principal del Motor Synkro. Analiza en profundidad el perfil del cliente y los datos del mes para crear el BRIEF MAESTRO que guiará todos los prompts de contenido posteriores.
 ${historialSection ? '\n' + historialSection + '\n' : ''}${continuitySection}${cierreSection}
@@ -2807,106 +2820,174 @@ async function saveCierreMes() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Lee los datos del cierre y genera:
- * 1. Instrucciones estratégicas automáticas basadas en números reales
- * 2. Sección Markdown lista para inyectar en buildMaestroPrompt
+ * buildIntelSection — visión histórica completa
+ * @param {Object|null} cierreMes    — cierre del mes inmediato anterior
+ * @param {Array}       todosCierres — array de todos los cierres históricos
+ * @returns {string} Sección Markdown lista para inyectar en buildMaestroPrompt
  */
-function buildIntelSection(cierre) {
-  if (!cierre) return '';
+function buildIntelSection(cierreMes, todosCierres) {
+  let seccion = `## INTELIGENCIA ESTRATÉGICA DEL CLIENTE\n`;
+  seccion += `> Esta sección tiene MÁXIMA PRECEDENCIA. Todas las decisiones de formato, canal y tipo de contenido deben basarse en estos datos reales antes que en cualquier suposición genérica.\n\n`;
 
-  const ig = cierre.instagram || {};
-  const fb = cierre.facebook  || {};
-  const tk = cierre.tiktok    || {};
+  // ── BLOQUE 1: Análisis histórico acumulado (si hay 2+ cierres) ──
+  if (todosCierres && todosCierres.length >= 2) {
+    seccion += `### Patrones históricos (${todosCierres.length} meses de datos)\n\n`;
 
-  const igAlcance = ig.alcance || 0;
-  const fbAlcance = fb.alcance || 0;
-  const tkAlcance = tk.alcance || 0;
-  const totalAlcance = igAlcance + fbAlcance + tkAlcance;
+    const redes = ['ig', 'fb', 'tk'];
+    const nombresRedes = { ig: 'Instagram', fb: 'Facebook', tk: 'TikTok' };
+    const stats = {};
 
-  const igInter = ig.interacciones || 0;
-  const fbInter = fb.interacciones || 0;
-  const tkInter = tk.interacciones || 0;
+    redes.forEach(red => {
+      const valores = todosCierres
+        .map(c => {
+          const alcance = parseInt(c[`${red}_alcance`]) || 0;
+          const ini = parseInt(c[`${red}_seg_inicio`]) || 0;
+          const fin = parseInt(c[`${red}_seg_fin`]) || 0;
+          const interacciones = parseInt(c[`${red}_interacciones`]) || 0;
+          const engagement = ini > 0 ? ((interacciones / ini) * 100) : 0;
+          return { alcance, seguidores: fin - ini, engagement, interacciones };
+        })
+        .filter(v => v.alcance > 0);
 
-  const igEng = igAlcance > 0 ? ((igInter / igAlcance) * 100).toFixed(1) : '0';
-  const fbEng = fbAlcance > 0 ? ((fbInter / fbAlcance) * 100).toFixed(1) : '0';
-  const tkEng = tkAlcance > 0 ? ((tkInter / tkAlcance) * 100).toFixed(1) : '0';
+      if (valores.length === 0) { stats[red] = null; return; }
 
-  const igGanados = (ig.seguidoresFin || 0) - (ig.seguidoresInicio || 0);
-  const fbGanados = (fb.seguidoresFin || 0) - (fb.seguidoresInicio || 0);
-  const tkGanados = (tk.seguidoresFin || 0) - (tk.seguidoresInicio || 0);
+      const promedioAlcance = Math.round(valores.reduce((s, v) => s + v.alcance, 0) / valores.length);
+      const promedioEngagement = (valores.reduce((s, v) => s + v.engagement, 0) / valores.length).toFixed(1);
+      const totalSeguidores = valores.reduce((s, v) => s + v.seguidores, 0);
 
-  // Determinar canal líder en alcance
-  const alcances = [
-    { red: 'Instagram', val: igAlcance, eng: parseFloat(igEng) },
-    { red: 'Facebook',  val: fbAlcance, eng: parseFloat(fbEng) },
-    { red: 'TikTok',    val: tkAlcance, eng: parseFloat(tkEng) },
-  ];
-  alcances.sort((a, b) => b.val - a.val);
-  const canalLiderAlcance = alcances[0].red;
+      let tendencia = 'estable';
+      if (valores.length >= 3) {
+        const mitad = Math.floor(valores.length / 2);
+        const promedioAntes = valores.slice(0, mitad).reduce((s, v) => s + v.alcance, 0) / mitad;
+        const promedioDespues = valores.slice(mitad).reduce((s, v) => s + v.alcance, 0) / (valores.length - mitad);
+        const delta = ((promedioDespues - promedioAntes) / promedioAntes) * 100;
+        if (delta > 15) tendencia = '📈 creciendo';
+        else if (delta < -15) tendencia = '📉 bajando';
+        else tendencia = '➡️ estable';
+      }
 
-  const engagements = [
-    { red: 'Instagram', eng: parseFloat(igEng) },
-    { red: 'Facebook',  eng: parseFloat(fbEng) },
-    { red: 'TikTok',    eng: parseFloat(tkEng) },
-  ];
-  engagements.sort((a, b) => b.eng - a.eng);
-  const canalLiderEng    = engagements[0].red;
-  const canalMenorEng    = engagements[2].red;
+      stats[red] = { promedioAlcance, promedioEngagement, totalSeguidores, tendencia, meses: valores.length };
+    });
 
-  // Generar instrucciones automáticas basadas en datos
-  const instrucciones = [];
+    seccion += `| Red | Alcance promedio | Engagement promedio | Seguidores ganados (total) | Tendencia |\n`;
+    seccion += `|-----|-----------------|--------------------|--------------------------|-----------|\n`;
+    redes.forEach(red => {
+      if (stats[red]) {
+        const s = stats[red];
+        seccion += `| ${nombresRedes[red]} | ${s.promedioAlcance.toLocaleString()} | ${s.promedioEngagement}% | +${s.totalSeguidores} | ${s.tendencia} |\n`;
+      }
+    });
+    seccion += `\n`;
 
-  // Regla 1: Canal con mayor alcance → mantener o escalar
-  instrucciones.push(`- ${canalLiderAlcance} lideró el alcance (${alcances[0].val.toLocaleString()} personas = ${totalAlcance > 0 ? Math.round(alcances[0].val / totalAlcance * 100) : 0}% del total). PRIORIZAR este canal en frecuencia y calidad de contenido.`);
+    const canalDominante = redes.filter(r => stats[r]).sort((a, b) => stats[b].promedioAlcance - stats[a].promedioAlcance)[0];
+    if (canalDominante) {
+      seccion += `**Canal históricamente dominante:** ${nombresRedes[canalDominante]} (consistente en ${stats[canalDominante].meses} meses)\n\n`;
+    }
 
-  // Regla 2: Canal con mayor engagement → replicar formato
-  if (canalLiderEng !== canalLiderAlcance) {
-    instrucciones.push(`- ${canalLiderEng} tuvo el engagement más alto (${engagements[0].eng}%). Replicar el tipo de contenido y tono que funcionó ahí.`);
+    const canalEngagement = redes.filter(r => stats[r]).sort((a, b) => parseFloat(stats[b].promedioEngagement) - parseFloat(stats[a].promedioEngagement))[0];
+    if (canalEngagement && canalEngagement !== canalDominante) {
+      seccion += `**Canal con mejor engagement histórico:** ${nombresRedes[canalEngagement]} (${stats[canalEngagement].promedioEngagement}% promedio) — replicar formatos que generan interacción aquí.\n\n`;
+    }
+
+    const mejoresPostsHistoricos = {};
+    redes.forEach(red => {
+      const posts = todosCierres.map(c => c[`${red}_mejor_post`]).filter(p => p && p.trim().length > 0);
+      if (posts.length > 0) mejoresPostsHistoricos[red] = posts;
+    });
+
+    if (Object.keys(mejoresPostsHistoricos).length > 0) {
+      seccion += `**Patrones de contenido ganador (histórico):**\n`;
+      redes.forEach(red => {
+        if (mejoresPostsHistoricos[red]) {
+          seccion += `- ${nombresRedes[red]}: "${mejoresPostsHistoricos[red][mejoresPostsHistoricos[red].length - 1]}" (y ${mejoresPostsHistoricos[red].length} meses de referencia)\n`;
+        }
+      });
+      seccion += `\n`;
+    }
+
+    seccion += `**Instrucciones estratégicas basadas en histórico:**\n`;
+    let instruccion = 1;
+    redes.forEach(red => {
+      if (!stats[red]) return;
+      const s = stats[red];
+      if (s.tendencia.includes('creciendo')) {
+        seccion += `${instruccion++}. ${nombresRedes[red]} está en tendencia de crecimiento sostenido — escalar volumen y frecuencia en esta red.\n`;
+      } else if (s.tendencia.includes('bajando')) {
+        seccion += `${instruccion++}. ${nombresRedes[red]} muestra caída sostenida — cambiar formato radicalmente, priorizar video corto y contenido interactivo.\n`;
+      }
+      if (parseFloat(s.promedioEngagement) < 1.5) {
+        seccion += `${instruccion++}. ${nombresRedes[red]} tiene engagement histórico bajo (${s.promedioEngagement}%) — evitar posts estáticos, priorizar Reels y preguntas directas.\n`;
+      }
+    });
+    seccion += `\n`;
   }
 
-  // Regla 3: Canal con menor engagement → cambiar estrategia
-  if (parseFloat(engagements[2].eng) < 2) {
-    instrucciones.push(`- ${canalMenorEng} tiene engagement bajo (${engagements[2].eng}%). Cambiar formato: menos contenido estático, más video y contenido interactivo.`);
+  // ── BLOQUE 2: Inteligencia del mes inmediato anterior ──
+  if (cierreMes) {
+    seccion += `### Datos del mes anterior (accionables para este mes)\n\n`;
+
+    const redes = ['ig', 'fb', 'tk'];
+    const nombresRedes = { ig: 'Instagram', fb: 'Facebook', tk: 'TikTok' };
+    let maxAlcance = 0, canalLider = 'Instagram';
+    let maxEngagement = 0, canalEngagementLider = 'Instagram';
+
+    const metricas = {};
+    redes.forEach(red => {
+      const alcance = parseInt(cierreMes[`${red}_alcance`]) || 0;
+      const ini = parseInt(cierreMes[`${red}_seg_inicio`]) || 1;
+      const fin = parseInt(cierreMes[`${red}_seg_fin`]) || 0;
+      const interacciones = parseInt(cierreMes[`${red}_interacciones`]) || 0;
+      const engagement = parseFloat(((interacciones / ini) * 100).toFixed(1));
+      metricas[red] = { alcance, seguidores: fin - ini, engagement, interacciones };
+      if (alcance > maxAlcance) { maxAlcance = alcance; canalLider = nombresRedes[red]; }
+      if (engagement > maxEngagement) { maxEngagement = engagement; canalEngagementLider = nombresRedes[red]; }
+    });
+
+    seccion += `| Red | Alcance | Engagement | Seguidores ganados | Mejor post | Peor post |\n`;
+    seccion += `|-----|---------|------------|-------------------|------------|----------|\n`;
+    redes.forEach(red => {
+      const m = metricas[red];
+      const mejor = cierreMes[`${red}_mejor_post`] || '—';
+      const peor  = cierreMes[`${red}_peor_post`]  || '—';
+      seccion += `| ${nombresRedes[red]} | ${m.alcance.toLocaleString()} | ${m.engagement}% | +${m.seguidores} | ${mejor} | ${peor} |\n`;
+    });
+    seccion += `\n`;
+
+    seccion += `**Instrucciones para el mes que vas a generar:**\n`;
+    let n = 1;
+    seccion += `${n++}. Canal líder en alcance el mes pasado: **${canalLider}** — priorizar en distribución y frecuencia.\n`;
+    if (canalEngagementLider !== canalLider) {
+      seccion += `${n++}. Canal líder en engagement: **${canalEngagementLider}** (${maxEngagement}%) — replicar el formato de contenido que generó interacción aquí.\n`;
+    }
+    redes.forEach(red => {
+      const m = metricas[red];
+      if (m.engagement < 1.5 && m.alcance > 0) {
+        seccion += `${n++}. ${nombresRedes[red]} tuvo engagement bajo (${m.engagement}%) — cambiar a video y contenido de pregunta directa este mes.\n`;
+      }
+    });
+    redes.forEach(red => {
+      const mejor = cierreMes[`${red}_mejor_post`];
+      if (mejor && mejor.trim()) {
+        seccion += `${n++}. ${nombresRedes[red]} — replicar estructura del mejor post: "${mejor}".\n`;
+      }
+    });
+    redes.forEach(red => {
+      const peor = cierreMes[`${red}_peor_post`];
+      if (peor && peor.trim()) {
+        seccion += `${n++}. ${nombresRedes[red]} — evitar el formato/contexto del peor post: "${peor}".\n`;
+      }
+    });
+    if (cierreMes.observacion && cierreMes.observacion.trim()) {
+      seccion += `${n++}. Observación del operador: "${cierreMes.observacion}" — incorporar como contexto estratégico.\n`;
+    }
+    seccion += `\n`;
   }
 
-  // Regla 4: Mejor post por red → replicar formato
-  if (ig.mejorPost) instrucciones.push(`- Instagram — formato ganador del mes pasado: "${ig.mejorPost}". Usar estructura similar en al menos 2 posts de este mes.`);
-  if (fb.mejorPost) instrucciones.push(`- Facebook — contenido que funcionó: "${fb.mejorPost}". Replicar el ángulo o contexto cultural si aplica.`);
-  if (tk.mejorPost) instrucciones.push(`- TikTok — video estrella: "${tk.mejorPost}". Mantener el gancho de descubrimiento/presentación local si fue ese tipo.`);
-
-  // Regla 5: Peor post por red → evitar
-  const peores = [ig.peorPost, fb.peorPost, tk.peorPost].filter(Boolean);
-  if (peores.length) {
-    instrucciones.push(`- EVITAR en este mes: contenido estacional desalineado con la identidad de marca, posts sin hook claro en primeras 2 líneas.`);
+  if (!cierreMes && (!todosCierres || todosCierres.length === 0)) {
+    seccion += `*Sin datos de meses anteriores — campaña basada en brief y objetivos del cliente.*\n\n`;
   }
 
-  // Regla 6: Observación manual de Pedro
-  if (cierre.observacion) {
-    instrucciones.push(`- Contexto adicional del operador: "${cierre.observacion}"`);
-  }
-
-  // Regla 7: Hooks débiles en IG
-  if (ig.peorPost && ig.peorPost.toLowerCase().includes('hook')) {
-    instrucciones.push(`- Instagram: reforzar hooks en las primeras 2 líneas de TODOS los posts. El hook define si el algoritmo distribuye o no.`);
-  }
-
-  return `## INTELIGENCIA DEL MES ANTERIOR (${cierre.mes || 'mes anterior'} ${cierre.año || ''})
-
-### Métricas reales
-| Red | Alcance | Interacciones | Engagement | Seguidores ganados |
-|-----|---------|---------------|------------|-------------------|
-| Instagram | ${igAlcance.toLocaleString()} | ${igInter} | ${igEng}% | +${igGanados} |
-| Facebook  | ${fbAlcance.toLocaleString()} | ${fbInter} | ${fbEng}% | +${fbGanados} |
-| TikTok    | ${tkAlcance.toLocaleString()} | ${tkInter} | ${tkEng}% | +${tkGanados} |
-| **TOTAL** | **${totalAlcance.toLocaleString()}** | **${(igInter+fbInter+tkInter)}** | — | **+${igGanados+fbGanados+tkGanados}** |
-
-### Canal líder en alcance: ${canalLiderAlcance} | Canal líder en engagement: ${canalLiderEng}
-
-### Instrucciones estratégicas para este mes — generadas automáticamente
-${instrucciones.join('\n')}
-
-REGLA CRÍTICA: Las instrucciones anteriores tienen precedencia sobre cualquier decisión genérica de contenido. El contenido de este mes debe sentirse como una evolución inteligente del mes anterior, no como un reinicio.
-`;
+  return seccion;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -3283,6 +3364,28 @@ new Chart(document.getElementById('cDonut'),{type:'doughnut',data:{labels:['Inst
   showToast('✓ Reporte descargado — ábrelo en Chrome para ver y compartir', 'success');
 }
 
+async function fetchTodosCierres(slug) {
+  try {
+    const ref = firebase.database().ref(`clientes/${slug}/cierres`);
+    const snapshot = await ref.once('value');
+    if (!snapshot.exists()) return [];
+    const data = snapshot.val();
+    const mesesOrden = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const cierres = Object.entries(data).map(([key, val]) => {
+      const partes = key.split('-');
+      const mesNombre = partes[0];
+      const anio = parseInt(partes[1]) || new Date().getFullYear();
+      const mesIdx = mesesOrden.indexOf(mesNombre);
+      return { key, mes: mesNombre, anio, mesIdx, ...val };
+    });
+    cierres.sort((a, b) => a.anio !== b.anio ? a.anio - b.anio : a.mesIdx - b.mesIdx);
+    return cierres;
+  } catch (e) {
+    console.warn('[Synkro] fetchTodosCierres error:', e);
+    return [];
+  }
+}
+
 async function fetchCierreMes(slug, mes, año) {
   try {
     const key  = mes.toLowerCase() + '-' + año;
@@ -3388,6 +3491,10 @@ async function setupClientSelector() {
         if (currentSlug && this.value) prefillMonthData(currentSlug, this.value);
       });
     }
+
+    currentClientSlug = slug;
+    const btnReportes = document.getElementById('btnReportesHistoricos');
+    if (btnReportes) btnReportes.style.display = 'inline-flex';
 
     showToast('Cliente cargado: ' + (brief.identidad?.nombre_comercial || brief.identidad?.nombre || this.value), 'success');
   });
@@ -3614,4 +3721,237 @@ HASHTAGS_TK_N: [hashtags TK separados por espacio]
 
 Donde N es el número del post CONTINUANDO desde donde quedaron los existentes.
 Genera los ${extraPosts} posts completos ahora.`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO REPORTES HISTÓRICOS
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generarReporteHistorico(slug, mes, anio) {
+  const ref = firebase.database().ref(`clientes/${slug}/cierres/${mes}-${anio}`);
+  const snapshot = await ref.once('value');
+  if (!snapshot.exists()) {
+    alert(`No hay cierre guardado para ${mes} ${anio} de este cliente.`);
+    return;
+  }
+  const cierre = snapshot.val();
+  let nombreCliente = slug;
+  try {
+    const briefSnap = await firebase.database().ref(`clientes/${slug}/brief`).once('value');
+    if (briefSnap.exists()) {
+      nombreCliente = briefSnap.val().identidad?.nombre_comercial || slug;
+    }
+  } catch(e) {}
+  generarReporteHTML({ ...cierre, _clientSlug: slug, _nombreCliente: nombreCliente, _mes: mes, _anio: anio });
+}
+
+async function generarReporteAcumulado(slug, mesInicio, anioInicio, mesFin, anioFin) {
+  const todosCierres = await fetchTodosCierres(slug);
+  const mesesOrden = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  const idxInicio = anioInicio * 12 + mesesOrden.indexOf(mesInicio);
+  const idxFin    = anioFin   * 12 + mesesOrden.indexOf(mesFin);
+
+  const cierresFiltrados = todosCierres.filter(c => {
+    const idx = c.anio * 12 + c.mesIdx;
+    return idx >= idxInicio && idx <= idxFin;
+  });
+
+  if (cierresFiltrados.length === 0) {
+    alert('No hay datos guardados en ese periodo.');
+    return;
+  }
+
+  let nombreCliente = slug;
+  try {
+    const briefSnap = await firebase.database().ref(`clientes/${slug}/brief`).once('value');
+    if (briefSnap.exists()) nombreCliente = briefSnap.val().identidad?.nombre_comercial || slug;
+  } catch(e) {}
+
+  const redes = ['ig', 'fb', 'tk'];
+  const nombresRedes = { ig: 'Instagram', fb: 'Facebook', tk: 'TikTok' };
+
+  const totales = {};
+  redes.forEach(red => {
+    totales[red] = { alcanceTotal: 0, interaccionesTotal: 0, seguidoresGanados: 0, mesesConDatos: 0 };
+  });
+
+  cierresFiltrados.forEach(c => {
+    redes.forEach(red => {
+      const alcance = parseInt(c[`${red}_alcance`]) || 0;
+      const ini = parseInt(c[`${red}_seg_inicio`]) || 1;
+      const fin = parseInt(c[`${red}_seg_fin`]) || 0;
+      const interacciones = parseInt(c[`${red}_interacciones`]) || 0;
+      if (alcance > 0) {
+        totales[red].alcanceTotal += alcance;
+        totales[red].interaccionesTotal += interacciones;
+        totales[red].seguidoresGanados += (fin - ini);
+        totales[red].mesesConDatos++;
+      }
+    });
+  });
+
+  const periodoLabel = `${mesInicio} ${anioInicio} — ${mesFin} ${anioFin}`;
+  const alcanceGlobalTotal  = redes.reduce((s, r) => s + totales[r].alcanceTotal, 0);
+  const interaccionesGlobal = redes.reduce((s, r) => s + totales[r].interaccionesTotal, 0);
+  const seguidoresGlobal    = redes.reduce((s, r) => s + totales[r].seguidoresGanados, 0);
+  const canalLider = [...redes].sort((a, b) => totales[b].alcanceTotal - totales[a].alcanceTotal)[0];
+
+  const labelsEvolucion = cierresFiltrados.map(c => c.mes.charAt(0).toUpperCase() + c.mes.slice(1, 3));
+  const datasetsEvolucion = JSON.stringify(redes.map(red => ({
+    label: nombresRedes[red],
+    data: cierresFiltrados.map(c => parseInt(c[`${red}_alcance`]) || 0),
+    borderColor: red === 'ig' ? '#E1306C' : red === 'fb' ? '#0d6e63' : '#010101',
+    backgroundColor: (red === 'ig' ? '#E1306C22' : red === 'fb' ? '#0d6e6322' : '#01010122'),
+    tension: 0.3, fill: false, pointRadius: 4
+  })));
+
+  const tablaRedes = redes.map(red => `<tr>
+    <td><strong>${nombresRedes[red]}</strong>${red === canalLider ? '<span class="tag-lider">LÍDER</span>' : ''}</td>
+    <td>${totales[red].alcanceTotal.toLocaleString()}</td>
+    <td>${totales[red].mesesConDatos > 0 ? Math.round(totales[red].alcanceTotal / totales[red].mesesConDatos).toLocaleString() : '—'}</td>
+    <td>${totales[red].interaccionesTotal.toLocaleString()}</td>
+    <td>+${totales[red].seguidoresGanados}</td>
+  </tr>`).join('');
+
+  const tablaHistorial = cierresFiltrados.map(c => {
+    const igA = parseInt(c['ig_alcance']) || 0;
+    const fbA = parseInt(c['fb_alcance']) || 0;
+    const tkA = parseInt(c['tk_alcance']) || 0;
+    return `<tr>
+      <td>${c.mes.charAt(0).toUpperCase() + c.mes.slice(1)} ${c.anio}</td>
+      <td>${igA.toLocaleString()}</td><td>${fbA.toLocaleString()}</td><td>${tkA.toLocaleString()}</td>
+      <td><strong>${(igA+fbA+tkA).toLocaleString()}</strong></td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte Acumulado — ${nombreCliente}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+<style>
+:root{--navy:#0f2847;--teal:#0d6e63;--gold:#b8860b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#f4f6f9;color:#1a1a2e}
+.header{background:var(--navy);color:white;padding:40px;text-align:center}
+.header h1{font-family:'Playfair Display',serif;font-size:2rem;color:#f0c040}
+.header p{opacity:.8;margin-top:8px}
+.badge-periodo{display:inline-block;background:var(--teal);color:white;padding:6px 18px;border-radius:20px;font-size:.85rem;font-weight:700;margin-top:12px}
+.container{max-width:900px;margin:0 auto;padding:32px 20px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.kpi{background:white;border-radius:12px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);border-top:4px solid var(--teal)}
+.kpi .valor{font-size:1.8rem;font-weight:700;color:var(--navy)}
+.kpi .label{font-size:.78rem;color:#666;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:white;border-radius:12px;padding:28px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:20px;font-size:1.2rem}
+.chart-wrap{position:relative;height:260px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:var(--navy);color:white;padding:10px 12px;text-align:left}
+td{padding:10px 12px;border-bottom:1px solid #eee}
+.tag-lider{background:var(--gold);color:white;padding:2px 10px;border-radius:10px;font-size:.75rem;font-weight:700;margin-left:8px}
+.btn-print{display:block;margin:32px auto 0;padding:14px 36px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer}
+@media print{.btn-print{display:none}}
+@media(max-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>${nombreCliente}</h1>
+  <p>Reporte de Desempeño Acumulado</p>
+  <span class="badge-periodo">${periodoLabel} · ${cierresFiltrados.length} meses</span>
+</div>
+<div class="container">
+  <div class="kpis">
+    <div class="kpi"><div class="valor">${(alcanceGlobalTotal/1000).toFixed(1)}K</div><div class="label">Alcance Total</div></div>
+    <div class="kpi"><div class="valor">${interaccionesGlobal.toLocaleString()}</div><div class="label">Interacciones</div></div>
+    <div class="kpi"><div class="valor">+${seguidoresGlobal}</div><div class="label">Seguidores Ganados</div></div>
+    <div class="kpi"><div class="valor">${nombresRedes[canalLider]}</div><div class="label">Canal Líder</div></div>
+  </div>
+  <div class="card">
+    <h2>📈 Evolución de Alcance por Red</h2>
+    <div class="chart-wrap"><canvas id="chartEvolucion"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>📊 Resumen por Red Social</h2>
+    <table>
+      <tr><th>Red</th><th>Alcance total</th><th>Promedio mensual</th><th>Interacciones</th><th>Seguidores ganados</th></tr>
+      ${tablaRedes}
+    </table>
+  </div>
+  <div class="card">
+    <h2>📅 Historial Mensual</h2>
+    <table>
+      <tr><th>Mes</th><th>IG Alcance</th><th>FB Alcance</th><th>TK Alcance</th><th>Total</th></tr>
+      ${tablaHistorial}
+    </table>
+  </div>
+  <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+</div>
+<script>
+new Chart(document.getElementById('chartEvolucion'),{
+  type:'line',
+  data:{labels:${JSON.stringify(labelsEvolucion)},datasets:${datasetsEvolucion}},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},
+    scales:{y:{beginAtZero:true,ticks:{callback:v=>v>=1000?(v/1000).toFixed(1)+'K':v}}}}
+});
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `reporte-acumulado-${slug}-${mesInicio}${anioInicio}-${mesFin}${anioFin}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Funciones del modal de Reportes Históricos ─────────────────────────────
+
+async function abrirModalReportes() {
+  const slug = currentClientSlug;
+  if (!slug) { alert('Selecciona un cliente primero.'); return; }
+
+  document.getElementById('reportesModalBackdrop').style.display = 'block';
+  document.getElementById('reportesClienteNombre').textContent = slug;
+
+  try {
+    const cierres = await fetchTodosCierres(slug);
+    const wrap = document.getElementById('mesesDisponiblesWrap');
+    const list = document.getElementById('mesesDisponiblesList');
+    if (cierres.length > 0) {
+      wrap.style.display = 'block';
+      list.innerHTML = cierres.map(c =>
+        `✅ ${c.mes.charAt(0).toUpperCase() + c.mes.slice(1)} ${c.anio}`
+      ).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
+    } else {
+      wrap.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+function cerrarModalReportes() {
+  document.getElementById('reportesModalBackdrop').style.display = 'none';
+}
+
+async function ejecutarReporteMes() {
+  const slug = currentClientSlug;
+  const mes  = document.getElementById('reporteMesSelect').value;
+  const anio = document.getElementById('reporteAnioSelect').value;
+  if (!slug) { alert('Selecciona un cliente primero.'); return; }
+  await generarReporteHistorico(slug, mes, anio);
+}
+
+async function ejecutarReporteAcumulado() {
+  const slug   = currentClientSlug;
+  const desdeM = document.getElementById('acumDesde').value;
+  const desdeA = parseInt(document.getElementById('acumDesdeAnio').value);
+  const hastaM = document.getElementById('acumHasta').value;
+  const hastaA = parseInt(document.getElementById('acumHastaAnio').value);
+  if (!slug) { alert('Selecciona un cliente primero.'); return; }
+  await generarReporteAcumulado(slug, desdeM, desdeA, hastaM, hastaA);
 }
