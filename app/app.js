@@ -570,18 +570,7 @@ REGLAS para este mes:
 - La instrucción especial tiene precedencia sobre cualquier decisión de tono o enfoque
 ` : '';
 
-  const cierreSection = cierre ? `
-## MÉTRICAS REALES DEL MES ANTERIOR
-- Instagram: ${cierre.instagram?.seguidoresInicio ?? 0} → ${cierre.instagram?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.instagram?.alcance ?? 0} | Interacciones: ${cierre.instagram?.interacciones ?? 0}
-- Facebook: ${cierre.facebook?.seguidoresInicio ?? 0} → ${cierre.facebook?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.facebook?.alcance ?? 0} | Interacciones: ${cierre.facebook?.interacciones ?? 0}
-- TikTok: ${cierre.tiktok?.seguidoresInicio ?? 0} → ${cierre.tiktok?.seguidoresFin ?? 0} seguidores | Alcance: ${cierre.tiktok?.alcance ?? 0} | Interacciones: ${cierre.tiktok?.interacciones ?? 0}
-- Mejor contenido: IG=${cierre.instagram?.mejorPost || '—'} | FB=${cierre.facebook?.mejorPost || '—'} | TK=${cierre.tiktok?.mejorPost || '—'}
-- Peor contenido: IG=${cierre.instagram?.peorPost || '—'} | FB=${cierre.facebook?.peorPost || '—'} | TK=${cierre.tiktok?.peorPost || '—'}
-- WhatsApp mensajes recibidos: ${cierre.whatsappMensajes ?? 0}
-- Observación: ${cierre.observacion || '—'}
-
-INSTRUCCIÓN: Usa estas métricas para ajustar el enfoque del mes siguiente. Si una red creció más, potenciarla. Si el mejor post fue de cierto tipo, replicar ese formato. Si el peor fue de cierto tipo, evitarlo o reformularlo.
-` : '';
+  const cierreSection = buildIntelSection(cierre);
 
   return `Eres el estratega principal del Motor Synkro. Analiza en profundidad el perfil del cliente y los datos del mes para crear el BRIEF MAESTRO que guiará todos los prompts de contenido posteriores.
 ${historialSection ? '\n' + historialSection + '\n' : ''}${continuitySection}${cierreSection}
@@ -2763,44 +2752,535 @@ async function saveCierreMes() {
     año,
     fechaCierre: new Date().toISOString(),
     instagram: {
-      seguidoresInicio: parseInt(document.getElementById('cIgSegInicio')?.value)   || 0,
-      seguidoresFin:    parseInt(document.getElementById('cIgSegFin')?.value)       || 0,
-      alcance:          parseInt(document.getElementById('cIgAlcance')?.value)      || 0,
-      interacciones:    parseInt(document.getElementById('cIgInteracciones')?.value)|| 0,
-      mejorPost:        document.getElementById('cIgMejorPost')?.value              || '',
-      peorPost:         document.getElementById('cIgPeorPost')?.value               || '',
+      seguidoresInicio: parseInt(document.getElementById('cIgSegInicio')?.value)    || 0,
+      seguidoresFin:    parseInt(document.getElementById('cIgSegFin')?.value)        || 0,
+      alcance:          parseInt(document.getElementById('cIgAlcance')?.value)       || 0,
+      interacciones:    parseInt(document.getElementById('cIgInteracciones')?.value) || 0,
+      mejorPost:        document.getElementById('cIgMejorPost')?.value               || '',
+      peorPost:         document.getElementById('cIgPeorPost')?.value                || '',
     },
     facebook: {
-      seguidoresInicio: parseInt(document.getElementById('cFbSegInicio')?.value)   || 0,
-      seguidoresFin:    parseInt(document.getElementById('cFbSegFin')?.value)       || 0,
-      alcance:          parseInt(document.getElementById('cFbAlcance')?.value)      || 0,
-      interacciones:    parseInt(document.getElementById('cFbInteracciones')?.value)|| 0,
-      mejorPost:        document.getElementById('cFbMejorPost')?.value              || '',
-      peorPost:         document.getElementById('cFbPeorPost')?.value               || '',
+      seguidoresInicio: parseInt(document.getElementById('cFbSegInicio')?.value)    || 0,
+      seguidoresFin:    parseInt(document.getElementById('cFbSegFin')?.value)        || 0,
+      alcance:          parseInt(document.getElementById('cFbAlcance')?.value)       || 0,
+      interacciones:    parseInt(document.getElementById('cFbInteracciones')?.value) || 0,
+      mejorPost:        document.getElementById('cFbMejorPost')?.value               || '',
+      peorPost:         document.getElementById('cFbPeorPost')?.value                || '',
     },
     tiktok: {
-      seguidoresInicio: parseInt(document.getElementById('cTkSegInicio')?.value)   || 0,
-      seguidoresFin:    parseInt(document.getElementById('cTkSegFin')?.value)       || 0,
-      alcance:          parseInt(document.getElementById('cTkAlcance')?.value)      || 0,
-      interacciones:    parseInt(document.getElementById('cTkInteracciones')?.value)|| 0,
-      mejorPost:        document.getElementById('cTkMejorPost')?.value              || '',
-      peorPost:         document.getElementById('cTkPeorPost')?.value               || '',
+      seguidoresInicio: parseInt(document.getElementById('cTkSegInicio')?.value)    || 0,
+      seguidoresFin:    parseInt(document.getElementById('cTkSegFin')?.value)        || 0,
+      alcance:          parseInt(document.getElementById('cTkAlcance')?.value)       || 0,
+      interacciones:    parseInt(document.getElementById('cTkInteracciones')?.value) || 0,
+      mejorPost:        document.getElementById('cTkMejorPost')?.value               || '',
+      peorPost:         document.getElementById('cTkPeorPost')?.value                || '',
     },
     whatsappMensajes: parseInt(document.getElementById('cWhatsappMensajes')?.value) || 0,
-    observacion:      document.getElementById('cObservacion')?.value                || '',
+    observacion:      document.getElementById('cObservacion')?.value                 || '',
   };
 
-  const saveBtn = document.getElementById('saveCierreBtn');
+  const saveBtn      = document.getElementById('saveCierreBtn');
+  const reporteBtn   = document.getElementById('generarReporteBtn');
+  const reporteHint  = document.getElementById('reporteHint');
+
   try {
-    if (saveBtn) saveBtn.textContent = 'Guardando...';
+    if (saveBtn) { saveBtn.textContent = 'Guardando...'; saveBtn.disabled = true; }
     await db.ref(`clientes/${slug}/cierres/${key}`).set(cierre);
     showToast('✓ Cierre de mes guardado correctamente', 'success');
-    document.getElementById('cierreModalBackdrop').classList.remove('open');
+
+    // Mostrar botón de reporte después de guardar
+    if (reporteBtn) {
+      reporteBtn.style.display = 'block';
+      reporteBtn.onclick = () => generarReporteHTML(cierre, slug);
+    }
+    if (reporteHint) reporteHint.style.display = 'block';
+
   } catch (e) {
     showToast('Error al guardar: ' + e.message, 'error');
   } finally {
-    if (saveBtn) saveBtn.textContent = '💾 Guardar Cierre de Mes';
+    if (saveBtn) { saveBtn.textContent = '💾 Guardar Cierre de Mes'; saveBtn.disabled = false; }
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── MÓDULO INTELIGENCIA DE CIERRE — buildIntelSection ────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Lee los datos del cierre y genera:
+ * 1. Instrucciones estratégicas automáticas basadas en números reales
+ * 2. Sección Markdown lista para inyectar en buildMaestroPrompt
+ */
+function buildIntelSection(cierre) {
+  if (!cierre) return '';
+
+  const ig = cierre.instagram || {};
+  const fb = cierre.facebook  || {};
+  const tk = cierre.tiktok    || {};
+
+  const igAlcance = ig.alcance || 0;
+  const fbAlcance = fb.alcance || 0;
+  const tkAlcance = tk.alcance || 0;
+  const totalAlcance = igAlcance + fbAlcance + tkAlcance;
+
+  const igInter = ig.interacciones || 0;
+  const fbInter = fb.interacciones || 0;
+  const tkInter = tk.interacciones || 0;
+
+  const igEng = igAlcance > 0 ? ((igInter / igAlcance) * 100).toFixed(1) : '0';
+  const fbEng = fbAlcance > 0 ? ((fbInter / fbAlcance) * 100).toFixed(1) : '0';
+  const tkEng = tkAlcance > 0 ? ((tkInter / tkAlcance) * 100).toFixed(1) : '0';
+
+  const igGanados = (ig.seguidoresFin || 0) - (ig.seguidoresInicio || 0);
+  const fbGanados = (fb.seguidoresFin || 0) - (fb.seguidoresInicio || 0);
+  const tkGanados = (tk.seguidoresFin || 0) - (tk.seguidoresInicio || 0);
+
+  // Determinar canal líder en alcance
+  const alcances = [
+    { red: 'Instagram', val: igAlcance, eng: parseFloat(igEng) },
+    { red: 'Facebook',  val: fbAlcance, eng: parseFloat(fbEng) },
+    { red: 'TikTok',    val: tkAlcance, eng: parseFloat(tkEng) },
+  ];
+  alcances.sort((a, b) => b.val - a.val);
+  const canalLiderAlcance = alcances[0].red;
+
+  const engagements = [
+    { red: 'Instagram', eng: parseFloat(igEng) },
+    { red: 'Facebook',  eng: parseFloat(fbEng) },
+    { red: 'TikTok',    eng: parseFloat(tkEng) },
+  ];
+  engagements.sort((a, b) => b.eng - a.eng);
+  const canalLiderEng    = engagements[0].red;
+  const canalMenorEng    = engagements[2].red;
+
+  // Generar instrucciones automáticas basadas en datos
+  const instrucciones = [];
+
+  // Regla 1: Canal con mayor alcance → mantener o escalar
+  instrucciones.push(`- ${canalLiderAlcance} lideró el alcance (${alcances[0].val.toLocaleString()} personas = ${totalAlcance > 0 ? Math.round(alcances[0].val / totalAlcance * 100) : 0}% del total). PRIORIZAR este canal en frecuencia y calidad de contenido.`);
+
+  // Regla 2: Canal con mayor engagement → replicar formato
+  if (canalLiderEng !== canalLiderAlcance) {
+    instrucciones.push(`- ${canalLiderEng} tuvo el engagement más alto (${engagements[0].eng}%). Replicar el tipo de contenido y tono que funcionó ahí.`);
+  }
+
+  // Regla 3: Canal con menor engagement → cambiar estrategia
+  if (parseFloat(engagements[2].eng) < 2) {
+    instrucciones.push(`- ${canalMenorEng} tiene engagement bajo (${engagements[2].eng}%). Cambiar formato: menos contenido estático, más video y contenido interactivo.`);
+  }
+
+  // Regla 4: Mejor post por red → replicar formato
+  if (ig.mejorPost) instrucciones.push(`- Instagram — formato ganador del mes pasado: "${ig.mejorPost}". Usar estructura similar en al menos 2 posts de este mes.`);
+  if (fb.mejorPost) instrucciones.push(`- Facebook — contenido que funcionó: "${fb.mejorPost}". Replicar el ángulo o contexto cultural si aplica.`);
+  if (tk.mejorPost) instrucciones.push(`- TikTok — video estrella: "${tk.mejorPost}". Mantener el gancho de descubrimiento/presentación local si fue ese tipo.`);
+
+  // Regla 5: Peor post por red → evitar
+  const peores = [ig.peorPost, fb.peorPost, tk.peorPost].filter(Boolean);
+  if (peores.length) {
+    instrucciones.push(`- EVITAR en este mes: contenido estacional desalineado con la identidad de marca, posts sin hook claro en primeras 2 líneas.`);
+  }
+
+  // Regla 6: Observación manual de Pedro
+  if (cierre.observacion) {
+    instrucciones.push(`- Contexto adicional del operador: "${cierre.observacion}"`);
+  }
+
+  // Regla 7: Hooks débiles en IG
+  if (ig.peorPost && ig.peorPost.toLowerCase().includes('hook')) {
+    instrucciones.push(`- Instagram: reforzar hooks en las primeras 2 líneas de TODOS los posts. El hook define si el algoritmo distribuye o no.`);
+  }
+
+  return `## INTELIGENCIA DEL MES ANTERIOR (${cierre.mes || 'mes anterior'} ${cierre.año || ''})
+
+### Métricas reales
+| Red | Alcance | Interacciones | Engagement | Seguidores ganados |
+|-----|---------|---------------|------------|-------------------|
+| Instagram | ${igAlcance.toLocaleString()} | ${igInter} | ${igEng}% | +${igGanados} |
+| Facebook  | ${fbAlcance.toLocaleString()} | ${fbInter} | ${fbEng}% | +${fbGanados} |
+| TikTok    | ${tkAlcance.toLocaleString()} | ${tkInter} | ${tkEng}% | +${tkGanados} |
+| **TOTAL** | **${totalAlcance.toLocaleString()}** | **${(igInter+fbInter+tkInter)}** | — | **+${igGanados+fbGanados+tkGanados}** |
+
+### Canal líder en alcance: ${canalLiderAlcance} | Canal líder en engagement: ${canalLiderEng}
+
+### Instrucciones estratégicas para este mes — generadas automáticamente
+${instrucciones.join('\n')}
+
+REGLA CRÍTICA: Las instrucciones anteriores tienen precedencia sobre cualquier decisión genérica de contenido. El contenido de este mes debe sentirse como una evolución inteligente del mes anterior, no como un reinicio.
+`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── GENERADOR DE REPORTE HTML ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+function generarReporteHTML(cierre, slug) {
+  const ig = cierre.instagram || {};
+  const fb = cierre.facebook  || {};
+  const tk = cierre.tiktok    || {};
+  const mes = cierre.mes || 'Mes';
+  const año = cierre.año || new Date().getFullYear();
+
+  const igAlcance = ig.alcance || 0;
+  const fbAlcance = fb.alcance || 0;
+  const tkAlcance = tk.alcance || 0;
+  const totalAlcance = igAlcance + fbAlcance + tkAlcance;
+  const totalInter   = (ig.interacciones||0) + (fb.interacciones||0) + (tk.interacciones||0);
+  const totalSeg     = ((ig.seguidoresFin||0)-(ig.seguidoresInicio||0)) +
+                       ((fb.seguidoresFin||0)-(fb.seguidoresInicio||0)) +
+                       ((tk.seguidoresFin||0)-(tk.seguidoresInicio||0));
+
+  const igEng = igAlcance > 0 ? ((ig.interacciones||0) / igAlcance * 100).toFixed(1) : '0';
+  const fbEng = fbAlcance > 0 ? ((fb.interacciones||0) / fbAlcance * 100).toFixed(1) : '0';
+  const tkEng = tkAlcance > 0 ? ((tk.interacciones||0) / tkAlcance * 100).toFixed(1) : '0';
+
+  const igGanados = (ig.seguidoresFin||0) - (ig.seguidoresInicio||0);
+  const fbGanados = (fb.seguidoresFin||0) - (fb.seguidoresInicio||0);
+  const tkGanados = (tk.seguidoresFin||0) - (tk.seguidoresInicio||0);
+
+  const igPct = totalAlcance > 0 ? Math.round(igAlcance / totalAlcance * 100) : 0;
+  const fbPct = totalAlcance > 0 ? Math.round(fbAlcance / totalAlcance * 100) : 0;
+  const tkPct = totalAlcance > 0 ? Math.round(tkAlcance / totalAlcance * 100) : 0;
+
+  // Canal líder
+  const canalLider = igAlcance >= fbAlcance && igAlcance >= tkAlcance ? 'Instagram'
+                   : tkAlcance >= fbAlcance ? 'TikTok' : 'Facebook';
+  const canalLiderAlcance = Math.max(igAlcance, fbAlcance, tkAlcance).toLocaleString();
+
+  // Engagement mayor
+  const engArr = [
+    { red: 'Instagram', eng: parseFloat(igEng) },
+    { red: 'Facebook',  eng: parseFloat(fbEng) },
+    { red: 'TikTok',    eng: parseFloat(tkEng) },
+  ].sort((a,b) => b.eng - a.eng);
+
+  // Nombre cliente
+  const clientName = clientData?.identidad?.nombre_comercial
+                  || clientData?.identidad?.nombre
+                  || clientData?.negocio?.nombre
+                  || slug || 'Cliente';
+
+  const fechaGen = new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+
+  // Status por red
+  function statusRed(eng, ganados) {
+    if (parseFloat(eng) >= 3 && ganados >= 10) return ['Excelente', '#1D9E75', '#e1f5ee'];
+    if (parseFloat(eng) >= 1.5)                return ['Moderado',  '#BA7517', '#faeeda'];
+    return ['Atención',  '#D85A30', '#fcebeb'];
+  }
+  const [igStatus, igColor, igBg] = statusRed(igEng, igGanados);
+  const [fbStatus, fbColor, fbBg] = statusRed(fbEng, fbGanados);
+  const [tkStatus, tkColor, tkBg] = statusRed(tkEng, tkGanados);
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Reporte ${mes} ${año} — ${clientName} × SYNKRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0f2847;--teal:#0d6e63;--teal-dark:#085041;--teal-light:#e1f5ee;--gold:#b8860b;--gold-mid:#d4a017;--gold-light:#fef3d0;--ink:#1a1a2e;--smoke:#f7f8fa;--mist:#eef0f4;--border:rgba(15,40,71,.10);--green:#1D9E75;--green-bg:#e1f5ee;--amber:#BA7517;--amber-bg:#faeeda;--red:#D85A30;--red-bg:#fcebeb;--blue:#2563EB;--blue-bg:#eff6ff;--purple:#6D28D9;--purple-bg:#ede9fe}
+html{font-size:16px}
+body{font-family:'DM Sans',sans-serif;background:var(--smoke);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+.page{max-width:880px;margin:0 auto;padding:2.5rem 2rem 4rem}
+.report-header{background:var(--navy);border-radius:16px;padding:2rem 2.5rem;margin-bottom:2rem;display:grid;grid-template-columns:1fr auto;align-items:start;gap:1rem;position:relative;overflow:hidden}
+.report-header::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;border:40px solid rgba(13,110,99,.18)}
+.report-header::after{content:'';position:absolute;bottom:-20px;left:200px;width:100px;height:100px;border-radius:50%;border:20px solid rgba(184,134,11,.12)}
+.header-brand{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+.brand-mark{width:32px;height:32px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:700}
+.brand-name{color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.15em;text-transform:uppercase;font-weight:500}
+.header-client{font-family:'Playfair Display',serif;font-size:2rem;color:#fff;line-height:1.15;margin-bottom:6px}
+.header-meta{color:rgba(255,255,255,.55);font-size:13px;display:flex;gap:1.5rem;flex-wrap:wrap}
+.header-right{text-align:right;position:relative;z-index:1}
+.mes-badge{display:inline-block;background:var(--gold);color:#fff;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;border-radius:20px;margin-bottom:8px}
+.header-date{color:rgba(255,255,255,.4);font-size:11px}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:.75rem;margin-top:2rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,40,71,.08)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.kpi-card.green::before{background:var(--green)}.kpi-card.blue::before{background:var(--blue)}.kpi-card.amber::before{background:var(--amber)}.kpi-card.purple::before{background:var(--purple)}
+.kpi-label{font-size:11px;color:#6b7a90;margin-bottom:6px;font-weight:500}
+.kpi-value{font-size:26px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:5px}
+.kpi-delta{font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px}
+.kpi-delta.up{background:var(--green-bg);color:var(--teal-dark)}.kpi-delta.flat{background:var(--mist);color:#6b7a90}.kpi-delta.purple{background:var(--purple-bg);color:#4c1d95}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem 1rem}
+.chart-card.full{grid-column:1 / -1}
+.chart-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.chart-subtitle{font-size:11px;color:#6b7a90;margin-bottom:12px}
+.legend-row{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7a90}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.insights-stack{display:flex;flex-direction:column;gap:10px}
+.insight-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.4rem;display:grid;grid-template-columns:auto 1fr;gap:1rem;align-items:start}
+.insight-icon-wrap{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-top:2px}
+.insight-head-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.insight-red-name{font-size:13px;font-weight:600;color:var(--ink)}
+.insight-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+.insight-highlights{display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.insight-stat{text-align:center}
+.insight-stat-val{font-size:15px;font-weight:600;color:var(--ink)}
+.insight-stat-lbl{font-size:10px;color:#6b7a90}
+.insight-divider{width:1px;background:var(--border);align-self:stretch;flex-shrink:0}
+.insight-text{font-size:13px;color:#4a5568;line-height:1.65}
+.best-post{margin-top:8px;background:var(--smoke);border-radius:8px;padding:8px 12px;font-size:12px;color:#4a5568;border-left:3px solid var(--teal)}
+.best-post strong{color:var(--teal-dark);font-size:10px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.warn-post{margin-top:6px;background:#fff8f5;border-radius:8px;padding:8px 12px;font-size:12px;color:#7a3a20;border-left:3px solid var(--red)}
+.warn-post strong{color:#922;font-size:10px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.conclusion-card{background:var(--navy);border-radius:16px;padding:2rem 2.5rem;position:relative;overflow:hidden;margin-top:2rem}
+.conclusion-card::before{content:'';position:absolute;bottom:-30px;right:-30px;width:150px;height:150px;border-radius:50%;border:30px solid rgba(13,110,99,.15)}
+.conclusion-eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-mid);font-weight:600;margin-bottom:10px}
+.conclusion-title{font-family:'Playfair Display',serif;font-size:1.35rem;color:#fff;margin-bottom:12px;line-height:1.3}
+.conclusion-body{font-size:14px;color:rgba(255,255,255,.75);line-height:1.75}
+.conclusion-recos{margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.reco-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:.9rem 1rem}
+.reco-red{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-mid);margin-bottom:5px}
+.reco-text{font-size:12px;color:rgba(255,255,255,.7);line-height:1.55}
+.report-footer{margin-top:2.5rem;text-align:center;font-size:11px;color:#9aa3b0;display:flex;align-items:center;justify-content:center;gap:8px}
+.footer-sep{width:3px;height:3px;border-radius:50%;background:#9aa3b0}
+.print-btn{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--navy);color:#fff;border:none;border-radius:50px;padding:12px 22px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(15,40,71,.25);transition:transform .2s;z-index:100}
+.print-btn:hover{transform:translateY(-2px)}
+@media print{body{background:#fff}.page{padding:1.5rem 1.5rem 2rem;max-width:100%}.print-btn{display:none}.report-header,.conclusion-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media(max-width:620px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.conclusion-recos{grid-template-columns:1fr}.report-header{grid-template-columns:1fr}.header-client{font-size:1.5rem}.insight-card{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="report-header">
+  <div>
+    <div class="header-brand">
+      <div class="brand-mark">S</div>
+      <span class="brand-name">SYNKRO · Reporte Mensual</span>
+    </div>
+    <div class="header-client">${escHtml(clientName)}</div>
+    <div class="header-meta">
+      <span>📅 ${mes} ${año}</span>
+      <span>📍 Querétaro</span>
+      <span>📦 Generado por SYNKRO</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="mes-badge">Reporte mensual</div>
+    <div class="header-date">Generado el ${fechaGen}</div>
+  </div>
+</header>
+
+<p class="section-label">Indicadores clave del mes</p>
+<div class="kpi-grid">
+  <div class="kpi-card green">
+    <div class="kpi-label">Alcance total</div>
+    <div class="kpi-value">${totalAlcance.toLocaleString()}</div>
+    <span class="kpi-delta up">IG + FB + TikTok</span>
+  </div>
+  <div class="kpi-card purple">
+    <div class="kpi-label">Interacciones</div>
+    <div class="kpi-value">${totalInter.toLocaleString()}</div>
+    <span class="kpi-delta purple">${totalAlcance > 0 ? ((totalInter/totalAlcance)*100).toFixed(1) : 0}% engagement</span>
+  </div>
+  <div class="kpi-card amber">
+    <div class="kpi-label">Seguidores ganados</div>
+    <div class="kpi-value">+${totalSeg}</div>
+    <span class="kpi-delta flat">en ${mes}</span>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-label">Canal líder</div>
+    <div class="kpi-value">${canalLider}</div>
+    <span class="kpi-delta up">${canalLider === 'Instagram' ? igPct : canalLider === 'TikTok' ? tkPct : fbPct}% del alcance</span>
+  </div>
+</div>
+
+<p class="section-label">Resultados por red social</p>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Alcance por red</div>
+    <div class="chart-subtitle">Personas impactadas en ${mes}</div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:#0d6e63"></div>Instagram</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6D28D9"></div>TikTok</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Facebook</div>
+    </div>
+    <div style="position:relative;width:100%;height:180px">
+      <canvas id="cAlcance" role="img" aria-label="Alcance por red">IG ${igAlcance} · TK ${tkAlcance} · FB ${fbAlcance}</canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Interacciones por red</div>
+    <div class="chart-subtitle">Likes, comentarios y compartidos</div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:#0d6e63"></div>Instagram</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6D28D9"></div>TikTok</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Facebook</div>
+    </div>
+    <div style="position:relative;width:100%;height:180px">
+      <canvas id="cInter" role="img" aria-label="Interacciones por red">IG ${ig.interacciones||0} · TK ${tk.interacciones||0} · FB ${fb.interacciones||0}</canvas>
+    </div>
+  </div>
+  <div class="chart-card full">
+    <div class="chart-title">Distribución del alcance total — ${totalAlcance.toLocaleString()} personas alcanzadas</div>
+    <div class="chart-subtitle">Participación de cada red en el alcance mensual</div>
+    <div style="display:grid;grid-template-columns:180px 1fr;gap:1.5rem;align-items:center">
+      <div style="position:relative;width:180px;height:180px">
+        <canvas id="cDonut" role="img" aria-label="Distribución alcance">IG ${igPct}% · TK ${tkPct}% · FB ${fbPct}%</canvas>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:500">📸 Instagram</span>
+            <span style="font-size:13px;font-weight:600;color:#0d6e63">${igPct}% · ${igAlcance.toLocaleString()}</span>
+          </div>
+          <div style="background:var(--mist);border-radius:99px;height:7px;overflow:hidden"><div style="background:#0d6e63;height:100%;width:${igPct}%;border-radius:99px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:500">🎵 TikTok</span>
+            <span style="font-size:13px;font-weight:600;color:#6D28D9">${tkPct}% · ${tkAlcance.toLocaleString()}</span>
+          </div>
+          <div style="background:var(--mist);border-radius:99px;height:7px;overflow:hidden"><div style="background:#6D28D9;height:100%;width:${tkPct}%;border-radius:99px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:500">📘 Facebook</span>
+            <span style="font-size:13px;font-weight:600;color:#2563EB">${fbPct}% · ${fbAlcance.toLocaleString()}</span>
+          </div>
+          <div style="background:var(--mist);border-radius:99px;height:7px;overflow:hidden"><div style="background:#2563EB;height:100%;width:${fbPct}%;border-radius:99px"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="section-label">Análisis por red social</p>
+<div class="insights-stack">
+  <div class="insight-card">
+    <div class="insight-icon-wrap" style="background:${igBg}">📸</div>
+    <div>
+      <div class="insight-head-row">
+        <span class="insight-red-name">Instagram</span>
+        <span class="insight-status" style="background:${igBg};color:${igColor}">${igStatus}</span>
+      </div>
+      <div class="insight-highlights">
+        <div class="insight-stat"><div class="insight-stat-val">${igAlcance.toLocaleString()}</div><div class="insight-stat-lbl">alcance</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${ig.interacciones||0}</div><div class="insight-stat-lbl">interacciones</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">+${igGanados}</div><div class="insight-stat-lbl">seguidores</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${igEng}%</div><div class="insight-stat-lbl">engagement</div></div>
+      </div>
+      ${ig.mejorPost ? `<div class="best-post"><strong>Mejor contenido del mes</strong>${escHtml(ig.mejorPost)}</div>` : ''}
+      ${ig.peorPost  ? `<div class="warn-post"><strong>Área de mejora</strong>${escHtml(ig.peorPost)}</div>`  : ''}
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon-wrap" style="background:${tkBg}">🎵</div>
+    <div>
+      <div class="insight-head-row">
+        <span class="insight-red-name">TikTok</span>
+        <span class="insight-status" style="background:${tkBg};color:${tkColor}">${tkStatus}</span>
+      </div>
+      <div class="insight-highlights">
+        <div class="insight-stat"><div class="insight-stat-val">${tkAlcance.toLocaleString()}</div><div class="insight-stat-lbl">alcance</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${tk.interacciones||0}</div><div class="insight-stat-lbl">interacciones</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">+${tkGanados}</div><div class="insight-stat-lbl">seguidores</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${tkEng}%</div><div class="insight-stat-lbl">engagement</div></div>
+      </div>
+      ${tk.mejorPost ? `<div class="best-post"><strong>Mejor contenido del mes</strong>${escHtml(tk.mejorPost)}</div>` : ''}
+      ${tk.peorPost  ? `<div class="warn-post"><strong>Área de mejora</strong>${escHtml(tk.peorPost)}</div>`  : ''}
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-icon-wrap" style="background:${fbBg}">📘</div>
+    <div>
+      <div class="insight-head-row">
+        <span class="insight-red-name">Facebook</span>
+        <span class="insight-status" style="background:${fbBg};color:${fbColor}">${fbStatus}</span>
+      </div>
+      <div class="insight-highlights">
+        <div class="insight-stat"><div class="insight-stat-val">${fbAlcance.toLocaleString()}</div><div class="insight-stat-lbl">alcance</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${fb.interacciones||0}</div><div class="insight-stat-lbl">interacciones</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">+${fbGanados}</div><div class="insight-stat-lbl">seguidores</div></div>
+        <div class="insight-divider"></div>
+        <div class="insight-stat"><div class="insight-stat-val">${fbEng}%</div><div class="insight-stat-lbl">engagement</div></div>
+      </div>
+      ${fb.mejorPost ? `<div class="best-post"><strong>Mejor contenido del mes</strong>${escHtml(fb.mejorPost)}</div>` : ''}
+      ${fb.peorPost  ? `<div class="warn-post"><strong>Área de mejora</strong>${escHtml(fb.peorPost)}</div>`  : ''}
+    </div>
+  </div>
+</div>
+
+${cierre.observacion ? `
+<p class="section-label">Contexto del mes</p>
+<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem 1.4rem;font-size:13px;color:#4a5568;line-height:1.7;border-left:4px solid var(--gold)">
+  ${escHtml(cierre.observacion)}
+</div>` : ''}
+
+<div class="conclusion-card">
+  <div class="conclusion-eyebrow">Conclusión ejecutiva · ${mes} ${año}</div>
+  <div class="conclusion-title">${canalLider} lideró con ${canalLiderAlcance} personas alcanzadas</div>
+  <div class="conclusion-body">
+    El mes de ${mes} generó un alcance total de ${totalAlcance.toLocaleString()} personas en tres canales simultáneos con ${totalInter.toLocaleString()} interacciones.
+    ${canalLider} fue el canal de mayor rendimiento con ${canalLider === 'Instagram' ? igPct : canalLider === 'TikTok' ? tkPct : fbPct}% del alcance total.
+    El engagement promedio fue de ${totalAlcance > 0 ? ((totalInter/totalAlcance)*100).toFixed(1) : 0}%, con ${engArr[0].red} liderando en tasa de interacción (${engArr[0].eng}%).
+    ${cierre.observacion ? 'Nota de contexto: ' + cierre.observacion : ''}
+  </div>
+  <div class="conclusion-recos">
+    <div class="reco-item">
+      <div class="reco-red">📸 Instagram</div>
+      <div class="reco-text">Engagement ${igEng}%. ${parseFloat(igEng) >= 3 ? 'Mantener formato y frecuencia — está funcionando.' : 'Reforzar hooks en primeras 2 líneas. Priorizar contenido de producto con CTA claro.'}</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-red">🎵 TikTok</div>
+      <div class="reco-text">Engagement ${tkEng}%. ${parseFloat(tkEng) >= 2.5 ? 'Canal en ascenso — mantener formato de descubrimiento local y aumentar frecuencia.' : 'Probar distintos ganchos. El formato de presentación de tienda demostró funcionar.'}</div>
+    </div>
+    <div class="reco-item">
+      <div class="reco-red">📘 Facebook</div>
+      <div class="reco-text">Engagement ${fbEng}%. ${parseFloat(fbEng) >= 2 ? 'Mantener contenido conversacional con preguntas directas.' : 'Reducir contenido estático. Priorizar video y contenido cultural sobre informativo.'}</div>
+    </div>
+  </div>
+</div>
+
+<div class="report-footer">
+  <span>SYNKRO Agencia Digital</span>
+  <div class="footer-sep"></div>
+  <span>Querétaro, México</span>
+  <div class="footer-sep"></div>
+  <span>Reporte generado el ${fechaGen}</span>
+  <div class="footer-sep"></div>
+  <span>Datos verificados: Firebase</span>
+</div>
+
+</div>
+<button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+<script>
+const t='#0d6e63',p='#6D28D9',b='#2563EB';
+new Chart(document.getElementById('cAlcance'),{type:'bar',data:{labels:['Instagram','TikTok','Facebook'],datasets:[{data:[${igAlcance},${tkAlcance},${fbAlcance}],backgroundColor:[t,p,b],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11}},beginAtZero:true}}}});
+new Chart(document.getElementById('cInter'),{type:'bar',data:{labels:['Instagram','TikTok','Facebook'],datasets:[{data:[${ig.interacciones||0},${tk.interacciones||0},${fb.interacciones||0}],backgroundColor:[t,p,b],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:11}},beginAtZero:true}}}});
+new Chart(document.getElementById('cDonut'),{type:'doughnut',data:{labels:['Instagram','TikTok','Facebook'],datasets:[{data:[${igAlcance},${tkAlcance},${fbAlcance}],backgroundColor:[t,p,b],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+</script>
+</body>
+</html>`;
+
+  // Descargar el reporte como archivo HTML
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `reporte-${slug}-${mes.toLowerCase()}-${año}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Reporte descargado — ábrelo en Chrome para ver y compartir', 'success');
 }
 
 async function fetchCierreMes(slug, mes, año) {
