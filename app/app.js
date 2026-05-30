@@ -1508,7 +1508,8 @@ function saveHistorialFirebase(data) {
   const e     = data.estrategiaCampana || {};
 
   const clientName = (clientData && (
-    clientData.nombre || clientData.identidad?.nombre || clientData.negocio?.nombre || clientData.name
+    clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
+    clientData.negocio?.nombre || clientData.nombre || clientData.name
   )) || 'cliente';
 
   const clienteSlug = slugify(clientName);
@@ -3961,4 +3962,50 @@ async function ejecutarReporteAcumulado() {
   const hastaA = parseInt(document.getElementById('acumHastaAnio').value);
   if (!slug) { alert('Selecciona un cliente primero.'); return; }
   await generarReporteAcumulado(slug, desdeM, desdeA, hastaM, hastaA);
+}
+
+// ── Reimportar campaña desde JSON ─────────────────────────────────────────
+function reimportarCampana() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.posts || (!data.posts.instagram && !data.posts.facebook && !data.posts.tiktok)) {
+          showToast('JSON inválido — no contiene posts', 'error'); return;
+        }
+        const code = generateApprovalCode();
+        const clientName = (data.maestro && data._clientSlug) ? data._clientSlug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) : 'Cliente';
+        const mes = data._mes || 'Sin mes';
+        const approvals = {};
+        ['instagram','facebook','tiktok'].forEach(net => {
+          (data.posts[net] || []).forEach((_,idx) => {
+            approvals[`${net}_${idx}`] = { status:'pending', comment:'' };
+          });
+        });
+        const payload = {
+          code, createdAt: Date.now(), clientName, mes,
+          servicio: '', packageType: data._package || 'starter',
+          posts: { instagram: data.posts.instagram||[], facebook: data.posts.facebook||[], tiktok: data.posts.tiktok||[] },
+          fichaProduccion: data.fichaProduccion || null,
+          approvals, lastUpdated: Date.now()
+        };
+        db.ref('campaigns/' + code).set(payload)
+          .then(() => {
+            showApprovalLinkPanel(code);
+            showToast('✓ Campaña reimportada — nuevo código: ' + code, 'success');
+          })
+          .catch(err => showToast('Error: ' + err.message, 'error'));
+      } catch(err) {
+        showToast('Error al leer el JSON: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
