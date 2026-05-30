@@ -2347,6 +2347,7 @@ function setupApprovalButton() {
         <div class="approval-send-desc">Genera un link único para que el cliente revise y apruebe cada post directamente desde su celular.</div>
       </div>
       <button class="btn-send-approval" id="btnSendApproval">Enviar a Cliente para Aprobación</button>
+      <button class="btn-send-approval" style="background:transparent;border:1px solid #b8860b;color:#b8860b;margin-top:8px" onclick="reimportarCampana()">🔗 Reimportar campaña desde JSON</button>
     </div>
   `;
   grid.appendChild(panel);
@@ -2537,10 +2538,13 @@ function renderStatusSection() {
     }
 
     card.querySelector('.btn-delete-approval').addEventListener('click', function () {
-      if (confirm(`¿Eliminar sesión de aprobación ${this.dataset.code}?`)) {
-        db.ref('campaigns/' + this.dataset.code).remove()
-          .catch(err => showToast('Error eliminando: ' + err.message, 'error'));
-      }
+      const code = this.dataset.code;
+      const primera = confirm('⚠️ ¿Eliminar el link de aprobación ' + code + '?\nEsto borra la campaña de Firebase.');
+      if (!primera) return;
+      const segunda = confirm('❌ Confirmación final: esta acción NO se puede deshacer.\n¿Seguro que deseas eliminar ' + code + '?');
+      if (!segunda) return;
+      db.ref('campaigns/' + code).remove()
+        .catch(err => showToast('Error eliminando: ' + err.message, 'error'));
     });
 
     // Botones de editar post
