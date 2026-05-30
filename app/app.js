@@ -4001,8 +4001,15 @@ function reimportarCampana() {
         };
         db.ref('campaigns/' + code).set(payload)
           .then(() => {
+            if (!document.getElementById('approvalPanel')) {
+              const grid = document.getElementById('outputGrid') || document.body;
+              const panel = document.createElement('div');
+              panel.id = 'approvalPanel';
+              panel.style.cssText = 'grid-column:1/-1;margin-top:8px;';
+              grid.appendChild(panel);
+            }
             showApprovalLinkPanel(code);
-            showToast('✓ Campaña reimportada — nuevo código: ' + code, 'success');
+            showToast('✓ Campaña reimportada — código: ' + code, 'success');
           })
           .catch(err => showToast('Error: ' + err.message, 'error'));
       } catch(err) {
