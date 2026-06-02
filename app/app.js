@@ -2699,7 +2699,16 @@ function openEditModal(code, net, idx, currentText, clientComment = '') {
     saveBtn.textContent = 'Guardando...';
 
     // Actualizar el post en Firebase
-    db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).set(newText)
+    const postNodeRef = db.ref(`campaigns/${code}/posts/${net}/${idx}`);
+    postNodeRef.once('value')
+      .then(snap => {
+        const node = snap.val() || {};
+        // Preservar el copy original la primera vez que se edita
+        if (!node.copy_original) {
+          return postNodeRef.update({ copy_original: node.post || '' });
+        }
+      })
+      .then(() => db.ref(`campaigns/${code}/posts/${net}/${idx}/post`).set(newText))
       .then(() => {
         // Resetear el estado de aprobación de ese post a pending
         return db.ref(`campaigns/${code}/approvals/${net}_${idx}`).set({
