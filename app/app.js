@@ -2511,6 +2511,7 @@ function renderStatusSection() {
             return `<div class="status-change-item">
               <span class="status-change-net">${escHtml(netLabels[net] || net)} · Post ${Number(idx) + 1}</span>
               <span class="status-change-comment">"${escHtml(v.comment)}"</span>
+              <button class="btn-edit-post" data-code="${escHtml(sess.code)}" data-net="${escHtml(net)}" data-idx="${escHtml(idx)}" style="margin-left:8px;padding:2px 10px;font-size:.72rem;border-radius:6px;border:1px solid rgba(184,134,11,.5);background:rgba(184,134,11,.12);color:#f0c040;cursor:pointer;">Editar</button>
             </div>`;
           }).join('')}
         </div>
