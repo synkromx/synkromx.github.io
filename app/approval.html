@@ -941,6 +941,17 @@ function updateTimer() {
 function pad(n) { return String(n).padStart(2,'0') }
 
 // ── Mockup builders ────────────────────────────────────────────────────────
+function renderCopyBlock(currentText, copyOriginal) {
+  if (copyOriginal) {
+    return `
+      <span style="text-decoration:line-through;color:#9ca3af;">${escH(copyOriginal)}</span>
+      <div style="font-size:.75rem;color:#b8860b;margin:4px 0 2px;">✏️ Versión corregida</div>
+      <span style="display:block;background:rgba(0,128,128,.08);padding:6px 8px;border-radius:6px;">${escH(currentText)}</span>
+    `;
+  }
+  return escH(currentText);
+}
+
 function buildMockup(net, item, clientName) {
   const initial = (clientName || '?').trim().charAt(0).toUpperCase();
   const handle  = '@' + (clientName || 'negocio').toLowerCase().replace(/\s+/g,'_').slice(0,18);
@@ -968,7 +979,7 @@ function buildMockup(net, item, clientName) {
           <span class="ig-mock-icon ig-mock-bookmark">⊟</span>
         </div>
         <div class="ig-mock-likes">1,234 Me gusta</div>
-        <div class="ig-mock-caption"><b>${escH(handle)}</b> ${escH(shortCap)}</div>
+        <div class="ig-mock-caption"><b>${escH(handle)}</b> ${renderCopyBlock(shortCap, item.copy_original ? (item.copy_original.length > 200 ? item.copy_original.slice(0,200) + '…' : item.copy_original) : '')}</div>
         <div class="ig-mock-hashtags">${escH(hashtags)}</div>
         <div class="ig-mock-time">hace 2 horas</div>
       </div>
@@ -987,7 +998,7 @@ function buildMockup(net, item, clientName) {
           </div>
           <div class="fb-mock-more">•••</div>
         </div>
-        <div class="fb-mock-body">${escH(post)}</div>
+        <div class="fb-mock-body">${renderCopyBlock(post, item.copy_original || '')}</div>
         <div class="fb-mock-divider"></div>
         <div class="fb-mock-actions">
           <div class="fb-mock-btn">👍 Me gusta</div>
@@ -1013,7 +1024,7 @@ function buildMockup(net, item, clientName) {
           </div>
           <div class="tk-mock-bottom">
             <div class="tk-mock-user">${escH(handle)}</div>
-            <div class="tk-mock-cap">${escH(caption)}</div>
+            <div class="tk-mock-cap">${renderCopyBlock(caption, item.copy_original || '')}</div>
             <div class="tk-mock-tags">${escH(hashtags.split(' ').slice(0,5).join(' '))}</div>
             <div class="tk-mock-sound">♪ sonido original</div>
           </div>
