@@ -979,7 +979,7 @@ function buildMockup(net, item, clientName) {
           <span class="ig-mock-icon ig-mock-bookmark">⊟</span>
         </div>
         <div class="ig-mock-likes">1,234 Me gusta</div>
-        <div class="ig-mock-caption"><b>${escH(handle)}</b> ${renderCopyBlock(shortCap, item.copy_original ? (item.copy_original.length > 200 ? item.copy_original.slice(0,200) + '…' : item.copy_original) : '')}</div>
+        <div class="ig-mock-caption"><b>${escH(handle)}</b> ${renderCopyBlock(item.copy_original ? (item.post || shortCap) : shortCap, item.copy_original ? (item.copy_original.length > 200 ? item.copy_original.slice(0,200) + '…' : item.copy_original) : '')}</div>
         <div class="ig-mock-hashtags">${escH(hashtags)}</div>
         <div class="ig-mock-time">hace 2 horas</div>
       </div>
