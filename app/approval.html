@@ -324,7 +324,7 @@
     .tk-mock-user { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 3px }
     .tk-mock-cap {
       font-size: 11px; color: rgba(255,255,255,.92); line-height: 1.4;
-      max-height: 60px; overflow: hidden;
+      max-height: 120px; overflow-y: auto;
     }
     .tk-mock-tags { font-size: 11px; color: #69c9d0; margin-top: 3px; line-height: 1.5 }
     .tk-mock-sound {
@@ -516,19 +516,36 @@ let   timerRef  = null;
 function init() {
   if (!CODE) return showError('Sin código', 'No se proporcionó un código de campaña en la URL.');
 
-  db.ref('campaigns/' + CODE).once('value')
-    .then(snap => {
-      if (!snap.exists()) {
-        return showError('Campaña no encontrada',
-          `No existe una campaña con el código <strong>${escH(CODE)}</strong>.<br><br>
-           Verifica que el link sea correcto o pide uno nuevo a tu agencia.`);
-      }
-      data = snap.val();
+  db.ref('campaigns/' + CODE).on('value', snap => {
+    if (!snap.exists()) {
+      return showError('Campaña no encontrada',
+        `No existe una campaña con el código <strong>${escH(CODE)}</strong>.<br><br>
+         Verifica que el link sea correcto o pide uno nuevo a tu agencia.`);
+    }
+    const newData = snap.val();
+    if (!data) {
+      // Primera carga
+      data = newData;
       renderPage();
       startCountdown();
       checkAllApproved();
-    })
-    .catch(() => showError('Error de conexión', 'No se pudo cargar la campaña. Verifica tu conexión e intenta de nuevo.'));
+    } else {
+      // Actualización en tiempo real: refrescar aprobaciones y contadores
+      const oldApprovals = JSON.stringify(data.approvals);
+      data = newData;
+      if (JSON.stringify(data.approvals) !== oldApprovals) {
+        // Actualizar cada card que haya cambiado de estado
+        Object.keys(data.approvals).forEach(key => {
+          const card = document.getElementById(`card-${key}`);
+          if (card) refreshCard(key);
+        });
+        updateProgress();
+        updateFooterStats();
+        updateApproveAllBtn();
+        checkAllApproved();
+      }
+    }
+  }, () => showError('Error de conexión', 'No se pudo cargar la campaña. Verifica tu conexión e intenta de nuevo.'));
 }
 
 // ── Render principal ───────────────────────────────────────────────────────
@@ -984,7 +1001,6 @@ function buildMockup(net, item, clientName) {
   if (net === 'tiktok') {
     const caption  = item.caption  || '';
     const hashtags = item.hashtags || '';
-    const shortCap = caption.length > 90 ? caption.slice(0,90) + '…' : caption;
     return `
       <div class="tk-mock-outer">
         <div class="tk-mock-video">
@@ -997,7 +1013,7 @@ function buildMockup(net, item, clientName) {
           </div>
           <div class="tk-mock-bottom">
             <div class="tk-mock-user">${escH(handle)}</div>
-            <div class="tk-mock-cap">${escH(shortCap)}</div>
+            <div class="tk-mock-cap">${escH(caption)}</div>
             <div class="tk-mock-tags">${escH(hashtags.split(' ').slice(0,5).join(' '))}</div>
             <div class="tk-mock-sound">♪ sonido original</div>
           </div>
