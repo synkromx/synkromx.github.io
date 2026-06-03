@@ -2956,6 +2956,7 @@ function renderStatusSection() {
       <div class="status-card-footer">
         <a href="${escHtml(getApprovalUrl(sess.code))}" target="_blank" class="btn-open-approval">Ver página del cliente ↗</a>
         ${expired ? `<button class="btn-extend-approval" data-code="${escHtml(sess.code)}">⏳ Extender 24h</button>` : ''}
+        <button class="btn-usar-campana" data-code="${escHtml(sess.code)}">📋 Usar esta campaña</button>
         <button class="btn-delete-approval" data-code="${escHtml(sess.code)}">Eliminar</button>
       </div>
     `;
@@ -2974,6 +2975,12 @@ function renderStatusSection() {
         .catch(err => showToast('Error extendiendo: ' + err.message, 'error'));
       });
     }
+
+    card.querySelector('.btn-usar-campana').addEventListener('click', function () {
+      const code = this.dataset.code;
+      currentCampaignCode = code;
+      showToast(`Campaña ${code} activada — ya puedes generar la Guía de Armado`, 'success');
+    });
 
     card.querySelector('.btn-delete-approval').addEventListener('click', function () {
       const code = this.dataset.code;
