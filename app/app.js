@@ -1477,6 +1477,218 @@ function downloadResumenHtml(data) {
   );
 }
 
+// ── Guía de Materiales ────────────────────────────────────────────────────
+
+function generarGuiaMateriales(data) {
+  const month      = getMonthData();
+  const posts      = data.posts || {};
+  const igPosts    = posts.instagram || [];
+  const fbPosts    = posts.facebook  || [];
+  const tkPosts    = posts.tiktok    || [];
+  const reels      = data.reelEducativo || data.reels || null;
+
+  const clientName = (clientData && (
+    clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
+    clientData.negocio?.nombre || clientData.nombre || clientData.name
+  )) || 'Cliente';
+
+  const giro       = (clientData?.identidad?.giro || clientData?.negocio?.giro || '').toLowerCase();
+  const servicios  = clientData?.negocio?.servicios || clientData?.identidad?.servicios || '';
+  const slug       = data._clientSlug || slugify(clientName);
+  const mes        = month.mes || data._mes || 'mes';
+
+  // Determinar perfil de toma según giro
+  function perfilToma(giro) {
+    if (/gastronomía|gastro|restaur|comida|café|cafe|panad|repost|bebida|food/i.test(giro))
+      return { tipo: 'Cenital / Detalle de producto', encuadre: 'Cenital o 45° sobre la pieza', iluminacion: 'Natural difusa o caja de luz lateral', fondo: 'Superficie de madera, mármol o tela neutra', props: 'Vajilla de marca, ingredientes frescos, servilleta de tela' };
+    if (/tienda|producto|retail|moda|ropa|accesorio|joyería|joyeria|cosmét|cosmet|belleza|skincare/i.test(giro))
+      return { tipo: 'Producto en detalle / Flat lay', encuadre: 'Primer plano o plano detalle', iluminacion: 'Luz continua suave, sin sombras duras', fondo: 'Fondo blanco, crema o de marca', props: 'Packaging, cinta, flores secas, elementos de marca' };
+    if (/salud|médic|medic|clínic|clinic|dental|psicolog|terapia|bienestar|fitness|gym/i.test(giro))
+      return { tipo: 'Persona en acción / Ambiente clínico', encuadre: 'Plano medio o americano', iluminacion: 'Luz natural de ventana o softbox frontal', fondo: 'Consultorio ordenado, pared clara o fondo desenfocado', props: 'Instrumental de trabajo, planta decorativa, uniforme de marca' };
+    if (/abogad|notari|contab|finanz|consultor|coach|capacitac|educac|escuela|academia/i.test(giro))
+      return { tipo: 'Persona en acción profesional', encuadre: 'Plano medio en escritorio o sala de reunión', iluminacion: 'Luz natural + relleno suave', fondo: 'Librería, escritorio ordenado o pared corporativa', props: 'Laptop, cuaderno, café, pluma — sin elementos distractores' };
+    if (/construc|architect|diseño|design|decorac|inmobili|bienes raíces/i.test(giro))
+      return { tipo: 'Espacio / Resultado terminado', encuadre: 'Gran angular o plano general del espacio', iluminacion: 'Luz natural + hora dorada para exteriores', fondo: 'El mismo espacio o proyecto terminado', props: 'Materiales de muestra, maqueta, planos si aplica' };
+    // default
+    return { tipo: 'Persona + servicio en contexto', encuadre: 'Plano medio o americano', iluminacion: 'Luz natural difusa o softbox lateral', fondo: 'Instalaciones del negocio o fondo neutro de marca', props: 'Elementos del servicio, uniforme, logo visible' };
+  }
+
+  const perfil = perfilToma(giro);
+
+  // Fichas Instagram
+  const fichasIg = igPosts.map((item, i) => {
+    const copyRaw  = item.caption || item.post || '';
+    const copyCorto = copyRaw.length > 120 ? copyRaw.slice(0, 120) + '…' : copyRaw;
+    return `
+      <div class="ficha">
+        <div class="ficha-header">
+          <span class="ficha-num">📸 Pieza IG ${i + 1}</span>
+          <span class="ficha-red">Instagram</span>
+        </div>
+        <div class="ficha-copy">"${escP(copyCorto)}"</div>
+        <table class="ficha-tabla">
+          <tr><td class="ft-label">Tipo de toma</td><td>${escP(perfil.tipo)}</td></tr>
+          <tr><td class="ft-label">Encuadre</td><td>${escP(perfil.encuadre)}</td></tr>
+          <tr><td class="ft-label">Iluminación</td><td>${escP(perfil.iluminacion)}</td></tr>
+          <tr><td class="ft-label">Fondo</td><td>${escP(perfil.fondo)}</td></tr>
+          <tr><td class="ft-label">Props / Elementos</td><td>${escP(perfil.props)}</td></tr>
+        </table>
+      </div>`;
+  }).join('');
+
+  // Fichas Reels
+  let fichasReels = '';
+  if (reels) {
+    const escenas = Array.isArray(reels.escenas) ? reels.escenas : [];
+    const guionHtml = escenas.length
+      ? escenas.map((esc, i) => `
+          <tr>
+            <td class="ft-label">Escena ${i + 1}</td>
+            <td>
+              <strong>${escP(esc.titulo || esc.nombre || `Escena ${i+1}`)}</strong><br>
+              ${escP(esc.guion || esc.texto || esc.descripcion || '')}
+              ${esc.toma ? `<div class="escena-toma">📷 ${escP(esc.toma)}</div>` : ''}
+            </td>
+          </tr>`).join('')
+      : `<tr><td colspan="2">${escP(typeof reels === 'string' ? reels : JSON.stringify(reels))}</td></tr>`;
+
+    fichasReels = `
+      <div class="seccion-titulo">🎬 Ficha de Reel Educativo</div>
+      <div class="ficha">
+        <div class="ficha-header">
+          <span class="ficha-num">Reel 1</span>
+          <span class="ficha-red">Instagram / TikTok</span>
+        </div>
+        ${reels.titulo || reels.hook ? `<div class="ficha-copy">Hook: "${escP(reels.hook || reels.titulo || '')}"</div>` : ''}
+        <table class="ficha-tabla">${guionHtml}</table>
+      </div>`;
+  }
+
+  // Consolidado de materiales
+  const totalFotos = igPosts.length;
+  const totalReels = reels ? 1 : 0;
+  const consolidado = `
+    <table class="cons-table">
+      <thead><tr><th>Tipo</th><th>Cantidad</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Fotos para Instagram</td><td>${igPosts.length}</td><td>Siguiendo fichas de encuadre arriba</td></tr>
+        ${fbPosts.length  ? `<tr><td>Fotos para Facebook</td><td>${fbPosts.length}</td><td>Pueden compartirse con piezas IG</td></tr>` : ''}
+        ${tkPosts.length  ? `<tr><td>Videos / clips TikTok</td><td>${tkPosts.length}</td><td>Formato vertical 9:16</td></tr>` : ''}
+        ${totalReels      ? `<tr><td>Reel educativo</td><td>1</td><td>Guión incluido arriba — grabar escenas por separado</td></tr>` : ''}
+        <tr><td><strong>Total piezas</strong></td><td><strong>${igPosts.length + fbPosts.length + tkPosts.length + totalReels}</strong></td><td></td></tr>
+      </tbody>
+    </table>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía de Materiales — ${escP(clientName)} · ${escP(mes)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#0f2847;color:#e2e8f0;min-height:100vh;padding:32px 20px}
+  .page{max-width:900px;margin:0 auto}
+
+  /* Encabezado */
+  .header{background:linear-gradient(135deg,#0d1f3c 0%,#0f2847 60%,#0d3d38 100%);border:1px solid rgba(184,134,11,.3);border-radius:16px;padding:36px 40px;margin-bottom:32px}
+  .header-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#b8860b;margin-bottom:8px}
+  .header-title{font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:#fff;margin-bottom:4px}
+  .header-sub{font-size:.9rem;color:#94a3b8;margin-top:8px}
+  .header-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .meta-chip{background:rgba(13,110,99,.25);border:1px solid rgba(13,110,99,.5);border-radius:20px;padding:5px 14px;font-size:.78rem;color:#5eead4}
+  .meta-chip strong{color:#fff;margin-right:4px}
+
+  /* Secciones */
+  .seccion-titulo{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;color:#b8860b;border-bottom:1px solid rgba(184,134,11,.3);padding-bottom:8px;margin:32px 0 16px}
+
+  /* Fichas */
+  .ficha{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+  .ficha-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .ficha-num{font-weight:700;color:#fff;font-size:.95rem}
+  .ficha-red{font-size:.72rem;background:rgba(184,134,11,.2);border:1px solid rgba(184,134,11,.4);color:#fde68a;border-radius:20px;padding:2px 10px}
+  .ficha-copy{font-style:italic;color:#94a3b8;font-size:.88rem;background:rgba(0,0,0,.2);border-left:3px solid #0d6e63;padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:12px}
+  .ficha-tabla{width:100%;border-collapse:collapse;font-size:.85rem}
+  .ficha-tabla tr{border-bottom:1px solid rgba(255,255,255,.06)}
+  .ficha-tabla tr:last-child{border-bottom:none}
+  .ft-label{color:#b8860b;font-weight:600;padding:7px 12px 7px 0;width:160px;vertical-align:top}
+  .ficha-tabla td{padding:7px 4px;color:#cbd5e1;vertical-align:top}
+  .escena-toma{margin-top:4px;font-size:.78rem;color:#5eead4;font-style:italic}
+
+  /* Resumen piezas */
+  .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px}
+  .resumen-card{background:rgba(13,110,99,.15);border:1px solid rgba(13,110,99,.35);border-radius:10px;padding:16px;text-align:center}
+  .resumen-num{font-size:2rem;font-weight:700;color:#5eead4;line-height:1}
+  .resumen-label{font-size:.75rem;color:#94a3b8;margin-top:4px}
+
+  /* Consolidado */
+  .cons-table{width:100%;border-collapse:collapse;font-size:.85rem}
+  .cons-table th{background:rgba(184,134,11,.15);color:#fde68a;text-align:left;padding:9px 14px;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em}
+  .cons-table td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.07);color:#cbd5e1}
+  .cons-table tr:last-child td{border-bottom:none;color:#fff}
+
+  /* Botón imprimir */
+  .print-btn{display:block;margin:32px auto 0;padding:12px 32px;background:#0d6e63;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;letter-spacing:.03em}
+  .print-btn:hover{background:#0f8a7d}
+
+  .footer{text-align:center;font-size:.72rem;color:#475569;margin-top:40px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
+
+  @media print{
+    body{background:#fff;color:#1a1a1a;padding:0}
+    .header{background:#0f2847;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .print-btn{display:none}
+    .ficha{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Encabezado -->
+  <div class="header">
+    <div class="header-eyebrow">SYNKRO · Producción de Contenido</div>
+    <div class="header-title">Guía de Materiales — Tiempo 1</div>
+    <div class="header-sub">${escP(clientName)} &nbsp;·&nbsp; ${escP(mes)}</div>
+    <div class="header-meta">
+      ${giro ? `<span class="meta-chip"><strong>Giro:</strong>${escP(giro)}</span>` : ''}
+      ${servicios ? `<span class="meta-chip"><strong>Servicios:</strong>${escP(typeof servicios === 'string' ? servicios : servicios.join(', '))}</span>` : ''}
+      <span class="meta-chip"><strong>Tipo de toma:</strong>${escP(perfil.tipo)}</span>
+    </div>
+  </div>
+
+  <!-- Resumen de piezas -->
+  <div class="seccion-titulo">📊 Resumen de Piezas Necesarias</div>
+  <div class="resumen-grid">
+    ${igPosts.length ? `<div class="resumen-card"><div class="resumen-num">${igPosts.length}</div><div class="resumen-label">Posts Instagram</div></div>` : ''}
+    ${fbPosts.length ? `<div class="resumen-card"><div class="resumen-num">${fbPosts.length}</div><div class="resumen-label">Posts Facebook</div></div>` : ''}
+    ${tkPosts.length ? `<div class="resumen-card"><div class="resumen-num">${tkPosts.length}</div><div class="resumen-label">Videos TikTok</div></div>` : ''}
+    ${reels         ? `<div class="resumen-card"><div class="resumen-num">1</div><div class="resumen-label">Reel Educativo</div></div>` : ''}
+  </div>
+
+  <!-- Fichas fotográficas Instagram -->
+  ${igPosts.length ? `<div class="seccion-titulo">📸 Fichas de Material Fotográfico — Instagram</div>${fichasIg}` : ''}
+
+  <!-- Fichas Reels -->
+  ${fichasReels}
+
+  <!-- Consolidado -->
+  <div class="seccion-titulo">📋 Lista Consolidada de Materiales</div>
+  ${consolidado}
+
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+
+  <div class="footer">Generado por Motor Synkro &nbsp;·&nbsp; ${escP(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }))}</div>
+</div>
+</body>
+</html>`;
+
+  triggerDownload(
+    new Blob([html], { type: 'text/html;charset=utf-8' }),
+    `guia-materiales-${slug}-${slugify(mes)}.html`
+  );
+}
+
 // ── JSON download helper ───────────────────────────────────────────────────
 
 function downloadJson(obj, label) {
