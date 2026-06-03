@@ -1570,7 +1570,7 @@ async function generarADNVisual(data) {
   const marca   = client.marca     || {};
   const negocio = client.negocio   || {};
   const posts   = data.posts       || {};
-  const igSample = (posts.instagram || []).slice(0, 3).map((p,i) =>
+  const igSample = (posts.instagram || []).slice(0, 6).map((p,i) =>
     `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
 
   const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${id.nombre_comercial || 'Cliente'}".
