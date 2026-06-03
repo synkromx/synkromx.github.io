@@ -1314,77 +1314,101 @@ function generateCampaignExports(data) {
   const hasCalBtn = !!data.calendarioPublicacion;
 
   wrapper.innerHTML = `
-    <div class="platform-card exports-card">
-      <div class="platform-bar" style="background:linear-gradient(90deg,#b8860b,#e8b923,#f59e0b)"></div>
-      <div class="platform-header exports-header">
-        <div class="platform-icon" style="background:linear-gradient(135deg,#b8860b,#e8b923);color:#fff;font-size:1.1rem">📥</div>
-        <span class="platform-name" style="color:var(--gold-xl)">Archivos del Mes</span>
-        <span class="exports-saved-badge">✓ Historial guardado en Firebase</span>
-      </div>
-      <div class="platform-body exports-body">
-        <p class="exports-desc">Descarga los archivos de esta campaña para tus registros, producción y entregas al cliente.</p>
-        <div class="exports-btns">
-          <button class="btn-export btn-export-pdf" id="btnDlPdf">
-            <span class="btn-export-icon">📄</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Resumen Ejecutivo</span>
-              <span class="btn-export-sub">HTML · imprime como PDF</span>
-            </span>
-          </button>
-          <button class="btn-export btn-export-json" id="btnDlFull">
-            <span class="btn-export-icon">📦</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Campaña Completa</span>
-              <span class="btn-export-sub">JSON · todos los prompts</span>
-            </span>
-          </button>
-          ${hasBotBtn ? `
-          <button class="btn-export btn-export-wa" id="btnDlBot">
-            <span class="btn-export-icon">💬</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Bot WhatsApp</span>
-              <span class="btn-export-sub">JSON · flujos y mensajes</span>
-            </span>
-          </button>` : ''}
-          ${hasCalBtn ? `
-          <button class="btn-export btn-export-cal" id="btnDlCal">
-            <span class="btn-export-icon">📅</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Calendario</span>
-              <span class="btn-export-sub">JSON · programa de publicación</span>
-            </span>
-          </button>` : ''}
-          <button class="btn-export btn-export-mat" id="btnDlMateriales">
-            <span class="btn-export-icon">📸</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Guía de Materiales</span>
-              <span class="btn-export-sub">HTML · sesión de fotos y video</span>
-            </span>
-          </button>
-          <button class="btn-export btn-export-armado" id="btnDlArmado" style="border:1px solid #b8860b;background:rgba(184,134,11,.1)">
-            <span class="btn-export-icon">🎨</span>
-            <span class="btn-export-text">
-              <span class="btn-export-label">Guía de Armado</span>
-              <span class="btn-export-sub">HTML · diseño y copy final</span>
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>`;
+<div class="platform-card exports-card">
+  <div class="platform-bar" style="background:linear-gradient(90deg,#b8860b,#e8b923,#f59e0b)"></div>
+  <div class="platform-header exports-header">
+    <div class="platform-icon" style="background:linear-gradient(135deg,#b8860b,#e8b923);color:#fff;font-size:1.1rem">📥</div>
+    <span class="platform-name" style="color:var(--gold-xl)">Archivos del Mes</span>
+    <span class="exports-saved-badge">✓ Historial guardado en Firebase</span>
+  </div>
+  <div class="platform-body exports-body">
+    <p class="exports-desc">Descarga los entregables de esta campaña para producción y entrega al cliente.</p>
+    <p style="font-size:.75rem;color:var(--gold-xl);margin:0 0 8px;font-weight:700;">📦 Datos crudos</p>
+    <div class="exports-btns" style="margin-bottom:16px;">
+      <button class="btn-export btn-export-json" id="btnDlFull">
+        <span class="btn-export-icon">📦</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Campaña Completa</span>
+          <span class="btn-export-sub">JSON · todos los prompts</span>
+        </span>
+      </button>
+      ${hasBotBtn ? `<button class="btn-export btn-export-wa" id="btnDlBot"><span class="btn-export-icon">💬</span><span class="btn-export-text"><span class="btn-export-label">Bot WhatsApp</span><span class="btn-export-sub">JSON · flujos y mensajes</span></span></button>` : ''}
+      ${hasCalBtn ? `<button class="btn-export btn-export-cal" id="btnDlCal"><span class="btn-export-icon">📅</span><span class="btn-export-text"><span class="btn-export-label">Calendario JSON</span><span class="btn-export-sub">JSON · programa de publicación</span></span></button>` : ''}
+    </div>
+    <p style="font-size:.75rem;color:var(--gold-xl);margin:0 0 8px;font-weight:700;">🤖 Entregables con IA</p>
+    <div class="exports-btns" style="margin-bottom:16px;">
+      <button class="btn-export btn-export-adn" id="btnDlADN">
+        <span class="btn-export-icon">🎨</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">ADN Visual</span>
+          <span class="btn-export-sub">HTML · sistema de marca</span>
+        </span>
+      </button>
+      <button class="btn-export btn-export-mat" id="btnDlBriefMat">
+        <span class="btn-export-icon">📸</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Brief Material</span>
+          <span class="btn-export-sub">HTML · auditoría y sesión de fotos</span>
+        </span>
+      </button>
+      <button class="btn-export btn-export-prompts" id="btnDlPrompts">
+        <span class="btn-export-icon">✨</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Prompts IA</span>
+          <span class="btn-export-sub">HTML · Imagen 3 por post</span>
+        </span>
+      </button>
+      <button class="btn-export btn-export-cal2" id="btnDlCalVisual">
+        <span class="btn-export-icon">📅</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Calendario Visual</span>
+          <span class="btn-export-sub">HTML · semana por semana</span>
+        </span>
+      </button>
+    </div>
+    <p id="labelGrupo2" style="font-size:.75rem;color:var(--teal-xl);margin:0 0 8px;font-weight:700;display:none;">✅ Post-aprobación</p>
+    <div class="exports-btns" id="btnGrupo2" style="display:none;">
+      <button class="btn-export btn-export-prod" id="btnDlProduccion">
+        <span class="btn-export-icon">🗂️</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Documento de Producción</span>
+          <span class="btn-export-sub">HTML · copy final aprobado</span>
+        </span>
+      </button>
+      <button class="btn-export btn-export-resumen" id="btnDlResumen">
+        <span class="btn-export-icon">📄</span>
+        <span class="btn-export-text">
+          <span class="btn-export-label">Resumen Ejecutivo</span>
+          <span class="btn-export-sub">HTML · estrategia del mes</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>`;
 
   grid.appendChild(wrapper);
 
-  wrapper.querySelector('#btnDlPdf').addEventListener('click',  () => downloadResumenHtml(data));
   wrapper.querySelector('#btnDlFull').addEventListener('click', () => downloadJson(data, 'campaña-completa'));
-
   const btnBot = wrapper.querySelector('#btnDlBot');
   if (btnBot) btnBot.addEventListener('click', () => downloadJson(data.botWhatsapp, 'bot-whatsapp'));
-
   const btnCal = wrapper.querySelector('#btnDlCal');
   if (btnCal) btnCal.addEventListener('click', () => downloadJson(data.calendarioPublicacion, 'calendario'));
-
-  wrapper.querySelector('#btnDlMateriales').addEventListener('click', () => generarGuiaMateriales(data));
-  wrapper.querySelector('#btnDlArmado').addEventListener('click', () => generarGuiaArmado());
+  wrapper.querySelector('#btnDlADN').addEventListener('click', () => generarADNVisual(data));
+  wrapper.querySelector('#btnDlBriefMat').addEventListener('click', () => generarBriefMaterial(data));
+  wrapper.querySelector('#btnDlPrompts').addEventListener('click', () => generarPromptsIA(data));
+  wrapper.querySelector('#btnDlCalVisual').addEventListener('click', () => generarCalendarioVisualHTML(data));
+  if (currentCampaignCode) {
+    db.ref('campaigns/' + currentCampaignCode + '/approvals').once('value').then(snap => {
+      const approvals = snap.val() || {};
+      const status = computeOverallStatus(approvals);
+      if (status === 'complete') {
+        wrapper.querySelector('#labelGrupo2').style.display = 'block';
+        wrapper.querySelector('#btnGrupo2').style.display = 'flex';
+        wrapper.querySelector('#btnDlProduccion').addEventListener('click', () => generarProduccionHTML(currentCampaignCode));
+        wrapper.querySelector('#btnDlResumen').addEventListener('click', () => generarResumenEjecutivoHTML(data));
+      }
+    });
+  }
 }
 
 // ── Resumen ejecutivo HTML ─────────────────────────────────────────────────
@@ -1494,462 +1518,218 @@ function downloadResumenHtml(data) {
   );
 }
 
-// ── Guía de Materiales ────────────────────────────────────────────────────
+// ── Entregables con IA ────────────────────────────────────────────────────
 
-async function generarGuiaMateriales(data, codeOverride) {
-  // Si se pasa codeOverride, cargar datos desde Firebase
-  if (codeOverride) {
-    try {
-      const snap = await db.ref(`campaigns/${codeOverride}`).once('value');
-      const fbData = snap.val();
-      if (!fbData) { showToast('No se encontró la campaña en Firebase', 'error'); return; }
-      // Intentar cargar brief del cliente
-      const slug = fbData._clientSlug || slugify(fbData.clientName || '');
-      let fbClient = clientData;
-      if (slug) {
-        const briefSnap = await db.ref(`clientes/${slug}/brief`).once('value');
-        if (briefSnap.exists()) fbClient = briefSnap.val();
-      }
-      // Reasignar temporalmente y rellamar sin override
-      const prevClient = clientData;
-      clientData = fbClient || clientData;
-      await generarGuiaMateriales(fbData, null);
-      clientData = prevClient;
-      return;
-    } catch (err) {
-      showToast('Error cargando campaña: ' + err.message, 'error'); return;
-    }
-  }
-
-  const month      = getMonthData();
-  const posts      = data.posts || {};
-  const igPosts    = posts.instagram || [];
-  const fbPosts    = posts.facebook  || [];
-  const tkPosts    = posts.tiktok    || [];
-  const reels      = data.reelEducativo || data.reels || null;
-
-  const clientName = (clientData && (
-    clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
-    clientData.negocio?.nombre || clientData.nombre || clientData.name
-  )) || data.clientName || 'Cliente';
-
-  const giro       = (clientData?.identidad?.giro || clientData?.negocio?.giro || '').toLowerCase();
-  const servicios  = clientData?.negocio?.servicios || clientData?.identidad?.servicios || '';
-  const slug       = data._clientSlug || slugify(clientName);
-  const mes        = month.mes || data._mes || 'mes';
-
-  // Determinar perfil de toma según giro
-  function perfilToma(giro) {
-    if (/gastronomía|gastro|restaur|comida|café|cafe|panad|repost|bebida|food/i.test(giro))
-      return { tipo: 'Cenital / Detalle de producto', encuadre: 'Cenital o 45° sobre la pieza', iluminacion: 'Natural difusa o caja de luz lateral', fondo: 'Superficie de madera, mármol o tela neutra', props: 'Vajilla de marca, ingredientes frescos, servilleta de tela' };
-    if (/tienda|producto|retail|moda|ropa|accesorio|joyería|joyeria|cosmét|cosmet|belleza|skincare/i.test(giro))
-      return { tipo: 'Producto en detalle / Flat lay', encuadre: 'Primer plano o plano detalle', iluminacion: 'Luz continua suave, sin sombras duras', fondo: 'Fondo blanco, crema o de marca', props: 'Packaging, cinta, flores secas, elementos de marca' };
-    if (/salud|médic|medic|clínic|clinic|dental|psicolog|terapia|bienestar|fitness|gym/i.test(giro))
-      return { tipo: 'Persona en acción / Ambiente clínico', encuadre: 'Plano medio o americano', iluminacion: 'Luz natural de ventana o softbox frontal', fondo: 'Consultorio ordenado, pared clara o fondo desenfocado', props: 'Instrumental de trabajo, planta decorativa, uniforme de marca' };
-    if (/abogad|notari|contab|finanz|consultor|coach|capacitac|educac|escuela|academia/i.test(giro))
-      return { tipo: 'Persona en acción profesional', encuadre: 'Plano medio en escritorio o sala de reunión', iluminacion: 'Luz natural + relleno suave', fondo: 'Librería, escritorio ordenado o pared corporativa', props: 'Laptop, cuaderno, café, pluma — sin elementos distractores' };
-    if (/construc|architect|diseño|design|decorac|inmobili|bienes raíces/i.test(giro))
-      return { tipo: 'Espacio / Resultado terminado', encuadre: 'Gran angular o plano general del espacio', iluminacion: 'Luz natural + hora dorada para exteriores', fondo: 'El mismo espacio o proyecto terminado', props: 'Materiales de muestra, maqueta, planos si aplica' };
-    // default
-    return { tipo: 'Persona + servicio en contexto', encuadre: 'Plano medio o americano', iluminacion: 'Luz natural difusa o softbox lateral', fondo: 'Instalaciones del negocio o fondo neutro de marca', props: 'Elementos del servicio, uniforme, logo visible' };
-  }
-
-  const perfil = perfilToma(giro);
-
-  // Fichas Instagram
-  const fichasIg = igPosts.map((item, i) => {
-    const copyRaw  = item.caption || item.post || '';
-    const copyCorto = copyRaw.length > 120 ? copyRaw.slice(0, 120) + '…' : copyRaw;
-    return `
-      <div class="ficha">
-        <div class="ficha-header">
-          <span class="ficha-num">📸 Pieza IG ${i + 1}</span>
-          <span class="ficha-red">Instagram</span>
-        </div>
-        <div class="ficha-copy">"${escP(copyCorto)}"</div>
-        <table class="ficha-tabla">
-          <tr><td class="ft-label">Tipo de toma</td><td>${escP(perfil.tipo)}</td></tr>
-          <tr><td class="ft-label">Encuadre</td><td>${escP(perfil.encuadre)}</td></tr>
-          <tr><td class="ft-label">Iluminación</td><td>${escP(perfil.iluminacion)}</td></tr>
-          <tr><td class="ft-label">Fondo</td><td>${escP(perfil.fondo)}</td></tr>
-          <tr><td class="ft-label">Props / Elementos</td><td>${escP(perfil.props)}</td></tr>
-        </table>
-      </div>`;
-  }).join('');
-
-  // Fichas Reels
-  let fichasReels = '';
-  if (reels) {
-    const escenas = Array.isArray(reels.escenas) ? reels.escenas : [];
-    const guionHtml = escenas.length
-      ? escenas.map((esc, i) => `
-          <tr>
-            <td class="ft-label">Escena ${i + 1}</td>
-            <td>
-              <strong>${escP(esc.titulo || esc.nombre || `Escena ${i+1}`)}</strong><br>
-              ${escP(esc.guion || esc.texto || esc.descripcion || '')}
-              ${esc.toma ? `<div class="escena-toma">📷 ${escP(esc.toma)}</div>` : ''}
-            </td>
-          </tr>`).join('')
-      : `<tr><td colspan="2">${escP(typeof reels === 'string' ? reels : JSON.stringify(reels))}</td></tr>`;
-
-    fichasReels = `
-      <div class="seccion-titulo">🎬 Ficha de Reel Educativo</div>
-      <div class="ficha">
-        <div class="ficha-header">
-          <span class="ficha-num">Reel 1</span>
-          <span class="ficha-red">Instagram / TikTok</span>
-        </div>
-        ${reels.titulo || reels.hook ? `<div class="ficha-copy">Hook: "${escP(reels.hook || reels.titulo || '')}"</div>` : ''}
-        <table class="ficha-tabla">${guionHtml}</table>
-      </div>`;
-  }
-
-  // Consolidado de materiales
-  const totalFotos = igPosts.length;
-  const totalReels = reels ? 1 : 0;
-  const consolidado = `
-    <table class="cons-table">
-      <thead><tr><th>Tipo</th><th>Cantidad</th><th>Notas</th></tr></thead>
-      <tbody>
-        <tr><td>Fotos para Instagram</td><td>${igPosts.length}</td><td>Siguiendo fichas de encuadre arriba</td></tr>
-        ${fbPosts.length  ? `<tr><td>Fotos para Facebook</td><td>${fbPosts.length}</td><td>Pueden compartirse con piezas IG</td></tr>` : ''}
-        ${tkPosts.length  ? `<tr><td>Videos / clips TikTok</td><td>${tkPosts.length}</td><td>Formato vertical 9:16</td></tr>` : ''}
-        ${totalReels      ? `<tr><td>Reel educativo</td><td>1</td><td>Guión incluido arriba — grabar escenas por separado</td></tr>` : ''}
-        <tr><td><strong>Total piezas</strong></td><td><strong>${igPosts.length + fbPosts.length + tkPosts.length + totalReels}</strong></td><td></td></tr>
-      </tbody>
-    </table>`;
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Guía de Materiales — ${escP(clientName)} · ${escP(mes)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap">
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#0f2847;color:#e2e8f0;min-height:100vh;padding:32px 20px}
-  .page{max-width:900px;margin:0 auto}
-
-  /* Encabezado */
-  .header{background:linear-gradient(135deg,#0d1f3c 0%,#0f2847 60%,#0d3d38 100%);border:1px solid rgba(184,134,11,.3);border-radius:16px;padding:36px 40px;margin-bottom:32px}
-  .header-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#b8860b;margin-bottom:8px}
-  .header-title{font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:#fff;margin-bottom:4px}
-  .header-sub{font-size:.9rem;color:#94a3b8;margin-top:8px}
-  .header-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
-  .meta-chip{background:rgba(13,110,99,.25);border:1px solid rgba(13,110,99,.5);border-radius:20px;padding:5px 14px;font-size:.78rem;color:#5eead4}
-  .meta-chip strong{color:#fff;margin-right:4px}
-
-  /* Secciones */
-  .seccion-titulo{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;color:#b8860b;border-bottom:1px solid rgba(184,134,11,.3);padding-bottom:8px;margin:32px 0 16px}
-
-  /* Fichas */
-  .ficha{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px 24px;margin-bottom:16px}
-  .ficha-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .ficha-num{font-weight:700;color:#fff;font-size:.95rem}
-  .ficha-red{font-size:.72rem;background:rgba(184,134,11,.2);border:1px solid rgba(184,134,11,.4);color:#fde68a;border-radius:20px;padding:2px 10px}
-  .ficha-copy{font-style:italic;color:#94a3b8;font-size:.88rem;background:rgba(0,0,0,.2);border-left:3px solid #0d6e63;padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:12px}
-  .ficha-tabla{width:100%;border-collapse:collapse;font-size:.85rem}
-  .ficha-tabla tr{border-bottom:1px solid rgba(255,255,255,.06)}
-  .ficha-tabla tr:last-child{border-bottom:none}
-  .ft-label{color:#b8860b;font-weight:600;padding:7px 12px 7px 0;width:160px;vertical-align:top}
-  .ficha-tabla td{padding:7px 4px;color:#cbd5e1;vertical-align:top}
-  .escena-toma{margin-top:4px;font-size:.78rem;color:#5eead4;font-style:italic}
-
-  /* Resumen piezas */
-  .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px}
-  .resumen-card{background:rgba(13,110,99,.15);border:1px solid rgba(13,110,99,.35);border-radius:10px;padding:16px;text-align:center}
-  .resumen-num{font-size:2rem;font-weight:700;color:#5eead4;line-height:1}
-  .resumen-label{font-size:.75rem;color:#94a3b8;margin-top:4px}
-
-  /* Consolidado */
-  .cons-table{width:100%;border-collapse:collapse;font-size:.85rem}
-  .cons-table th{background:rgba(184,134,11,.15);color:#fde68a;text-align:left;padding:9px 14px;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em}
-  .cons-table td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.07);color:#cbd5e1}
-  .cons-table tr:last-child td{border-bottom:none;color:#fff}
-
-  /* Botón imprimir */
-  .print-btn{display:block;margin:32px auto 0;padding:12px 32px;background:#0d6e63;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;letter-spacing:.03em}
-  .print-btn:hover{background:#0f8a7d}
-
-  .footer{text-align:center;font-size:.72rem;color:#475569;margin-top:40px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
-
-  @media print{
-    body{background:#fff;color:#1a1a1a;padding:0}
-    .header{background:#0f2847;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .print-btn{display:none}
-    .ficha{break-inside:avoid}
-  }
-</style>
-</head>
-<body>
-<div class="page">
-
-  <!-- Encabezado -->
-  <div class="header">
-    <div class="header-eyebrow">SYNKRO · Producción de Contenido</div>
-    <div class="header-title">Guía de Materiales — Tiempo 1</div>
-    <div class="header-sub">${escP(clientName)} &nbsp;·&nbsp; ${escP(mes)}</div>
-    <div class="header-meta">
-      ${giro ? `<span class="meta-chip"><strong>Giro:</strong>${escP(giro)}</span>` : ''}
-      ${servicios ? `<span class="meta-chip"><strong>Servicios:</strong>${escP(typeof servicios === 'string' ? servicios : servicios.join(', '))}</span>` : ''}
-      <span class="meta-chip"><strong>Tipo de toma:</strong>${escP(perfil.tipo)}</span>
-    </div>
-  </div>
-
-  <!-- Resumen de piezas -->
-  <div class="seccion-titulo">📊 Resumen de Piezas Necesarias</div>
-  <div class="resumen-grid">
-    ${igPosts.length ? `<div class="resumen-card"><div class="resumen-num">${igPosts.length}</div><div class="resumen-label">Posts Instagram</div></div>` : ''}
-    ${fbPosts.length ? `<div class="resumen-card"><div class="resumen-num">${fbPosts.length}</div><div class="resumen-label">Posts Facebook</div></div>` : ''}
-    ${tkPosts.length ? `<div class="resumen-card"><div class="resumen-num">${tkPosts.length}</div><div class="resumen-label">Videos TikTok</div></div>` : ''}
-    ${reels         ? `<div class="resumen-card"><div class="resumen-num">1</div><div class="resumen-label">Reel Educativo</div></div>` : ''}
-  </div>
-
-  <!-- Fichas fotográficas Instagram -->
-  ${igPosts.length ? `<div class="seccion-titulo">📸 Fichas de Material Fotográfico — Instagram</div>${fichasIg}` : ''}
-
-  <!-- Fichas Reels -->
-  ${fichasReels}
-
-  <!-- Consolidado -->
-  <div class="seccion-titulo">📋 Lista Consolidada de Materiales</div>
-  ${consolidado}
-
-  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
-
-  <div class="footer">Generado por Motor Synkro &nbsp;·&nbsp; ${escP(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }))}</div>
-</div>
-</body>
-</html>`;
-
-  triggerDownload(
-    new Blob([html], { type: 'text/html;charset=utf-8' }),
-    `guia-materiales-${slug}-${slugify(mes)}.html`
-  );
-}
-
-// ── Guía de Armado ────────────────────────────────────────────────────────
-
-async function generarGuiaArmado(codeOverride) {
-  const activeCode = codeOverride || currentCampaignCode;
-  if (!activeCode) {
-    showToast('No hay campaña activa. Genera o reimporta una campaña primero.', 'error');
-    return;
-  }
-
-  let firebasePosts;
-  let fbCampaign = {};
+async function callClaudeForHTML(prompt) {
+  const key = localStorage.getItem('synkro_api_key') || '';
+  if (!key) { showToast('Agrega tu API Key primero', 'error'); return null; }
+  showToast('Generando con IA… puede tardar unos segundos', 'info');
   try {
-    const snap = await db.ref(`campaigns/${activeCode}`).once('value');
-    fbCampaign = snap.val() || {};
-    firebasePosts = fbCampaign.posts || {};
-  } catch (err) {
-    showToast('Error leyendo campaña de Firebase: ' + err.message, 'error');
-    return;
-  }
-
-  // Si viene de override, intentar cargar el brief del cliente desde Firebase
-  let effectiveClient = clientData;
-  if (codeOverride) {
-    const slug = fbCampaign._clientSlug || slugify(fbCampaign.clientName || '');
-    if (slug) {
-      try {
-        const briefSnap = await db.ref(`clientes/${slug}/brief`).once('value');
-        if (briefSnap.exists()) effectiveClient = briefSnap.val();
-      } catch (_) {}
-    }
-  }
-
-  const month      = getMonthData();
-  const clientName = (effectiveClient && (
-    effectiveClient.identidad?.nombre_comercial || effectiveClient.identidad?.nombre ||
-    effectiveClient.negocio?.nombre || effectiveClient.nombre || effectiveClient.name
-  )) || fbCampaign.clientName || 'Cliente';
-  const giro = effectiveClient?.identidad?.giro || effectiveClient?.negocio?.giro || '';
-  const slug = slugify(clientName);
-  const mes  = month.mes || fbCampaign._mes || 'mes';
-
-  const netConfig = {
-    instagram: { label: 'Instagram', color: '#e1306c', canvas: '1080 × 1080 px', ratio: '1:1' },
-    facebook:  { label: 'Facebook',  color: '#1877f2', canvas: '1080 × 1080 px', ratio: '1:1' },
-    tiktok:    { label: 'TikTok',    color: '#010101', canvas: '1080 × 1920 px', ratio: '9:16' },
-  };
-
-  // Posición de texto según largo del copy
-  function posicionTexto(copy) {
-    const len = (copy || '').length;
-    if (len < 80)  return 'Centro — texto corto, ocupa zona central del canvas';
-    if (len < 200) return 'Inferior — texto medio, reservar 40% inferior del canvas';
-    return 'Superior — texto largo, comenzar en el tercio superior';
-  }
-
-  // Tamaño de fuente sugerido
-  function tamanoFuente(copy) {
-    const len = (copy || '').length;
-    if (len < 60)  return 'Título: 64px Bold · Cuerpo: 40px Regular';
-    if (len < 150) return 'Título: 56px Bold · Cuerpo: 36px Regular';
-    return 'Título: 48px Bold · Cuerpo: 32px Regular';
-  }
-
-  // Fondo recomendado
-  function fondoRecomendado(net) {
-    if (net === 'tiktok') return 'Video/clip de la sesión o fondo oscuro de marca (#0f2847)';
-    return 'Foto de la sesión (ver Guía de Materiales) o degradado de marca';
-  }
-
-  let pieceCounterIG = 0;
-  let allFichas = '';
-
-  for (const net of ['instagram', 'facebook', 'tiktok']) {
-    const cfg   = netConfig[net];
-    const items = firebasePosts[net];
-    if (!items || !items.length) continue;
-
-    allFichas += `<div class="seccion-titulo">${cfg.label}</div>`;
-
-    items.forEach((item, idx) => {
-      const copy = item.post || item.caption || '';
-      const igRef = net === 'instagram' ? ++pieceCounterIG : null;
-      const matRef = net === 'instagram'
-        ? `📸 Pieza IG ${igRef} de la Guía de Materiales`
-        : net === 'facebook'
-          ? `Puede usar la misma foto de Pieza IG correspondiente`
-          : `🎬 Clip de la sesión de video`;
-
-      allFichas += `
-        <div class="ficha">
-          <div class="ficha-header">
-            <div class="ficha-num-wrap">
-              <span class="ficha-num">Pieza ${idx + 1}</span>
-              <span class="ficha-red" style="background:${cfg.color}20;border-color:${cfg.color}60;color:${cfg.color}">${cfg.label}</span>
-            </div>
-            <span class="ficha-canvas">${cfg.canvas} &nbsp;·&nbsp; ${cfg.ratio}</span>
-          </div>
-          <table class="ficha-tabla">
-            <tr><td class="ft-label">Tipografía título</td><td>DM Sans Bold · ${tamanoFuente(copy).split('·')[0].trim()}</td></tr>
-            <tr><td class="ft-label">Tipografía cuerpo</td><td>DM Sans Regular · ${tamanoFuente(copy).split('·')[1]?.trim() || '36px Regular'}</td></tr>
-            <tr><td class="ft-label">Posición del texto</td><td>${posicionTexto(copy)}</td></tr>
-            <tr><td class="ft-label">Fondo</td><td>${fondoRecomendado(net)}</td></tr>
-            <tr><td class="ft-label">Referencia sesión</td><td>${matRef}</td></tr>
-          </table>
-          <div class="copy-block">
-            <div class="copy-label">Copy listo para usar</div>
-            <div class="copy-text">${escP(copy || '(sin copy)')}</div>
-          </div>
-        </div>`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
     });
-  }
-
-  const checklist = [
-    'Descargar fotos y videos de la sesión al computador',
-    'Abrir el archivo de plantilla en Canva / Photoshop / Illustrator',
-    'Para cada pieza: colocar la foto según referencia de la Guía de Materiales',
-    'Pegar el copy exacto desde esta guía — no redactar de nuevo',
-    'Aplicar tipografía DM Sans en los tamaños indicados por pieza',
-    'Verificar que el logo sea visible y el fondo no sature el texto',
-    'Exportar como PNG o JPG a 1080px en el lado menor',
-    'Nombrar archivos como: IG-Pieza1-NombreCliente.png, etc.',
-    'Subir piezas terminadas a la carpeta del cliente en Drive',
-    'Programar publicación según el Calendario del Mes',
-  ];
-
-  const checklistHtml = checklist.map((item, i) =>
-    `<div class="check-item"><span class="check-box"></span><span class="check-num">${i + 1}.</span>${escP(item)}</div>`
-  ).join('');
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Guía de Armado — ${escP(clientName)} · ${escP(mes)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap">
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#0f2847;color:#e2e8f0;min-height:100vh;padding:32px 20px}
-  .page{max-width:900px;margin:0 auto}
-
-  .header{background:linear-gradient(135deg,#0d1f3c 0%,#0f2847 60%,#1a0d3d 100%);border:1px solid rgba(184,134,11,.3);border-radius:16px;padding:36px 40px;margin-bottom:32px}
-  .header-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#b8860b;margin-bottom:8px}
-  .header-title{font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:#fff;margin-bottom:4px}
-  .header-sub{font-size:.9rem;color:#94a3b8;margin-top:8px}
-  .header-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
-  .meta-chip{background:rgba(184,134,11,.15);border:1px solid rgba(184,134,11,.35);border-radius:20px;padding:5px 14px;font-size:.78rem;color:#fde68a}
-  .meta-chip strong{color:#fff;margin-right:4px}
-
-  .seccion-titulo{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;color:#b8860b;border-bottom:1px solid rgba(184,134,11,.3);padding-bottom:8px;margin:32px 0 16px}
-
-  .ficha{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px 24px;margin-bottom:16px}
-  .ficha-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .ficha-num-wrap{display:flex;align-items:center;gap:10px}
-  .ficha-num{font-weight:700;color:#fff;font-size:.95rem}
-  .ficha-red{font-size:.72rem;border:1px solid;border-radius:20px;padding:2px 10px;font-weight:600}
-  .ficha-canvas{font-size:.78rem;color:#64748b;font-family:monospace}
-
-  .ficha-tabla{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:14px}
-  .ficha-tabla tr{border-bottom:1px solid rgba(255,255,255,.06)}
-  .ficha-tabla tr:last-child{border-bottom:none}
-  .ft-label{color:#b8860b;font-weight:600;padding:7px 12px 7px 0;width:160px;vertical-align:top;white-space:nowrap}
-  .ficha-tabla td{padding:7px 4px;color:#cbd5e1;vertical-align:top}
-
-  .copy-block{background:rgba(13,110,99,.12);border:1px solid rgba(13,110,99,.35);border-radius:10px;padding:16px 18px;margin-top:4px}
-  .copy-label{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#5eead4;margin-bottom:8px;font-weight:700}
-  .copy-text{font-size:.92rem;color:#f1f5f9;line-height:1.7;white-space:pre-wrap;font-family:'DM Sans',sans-serif;user-select:all;cursor:text}
-
-  .checklist-wrap{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:24px 28px;margin-top:8px}
-  .check-item{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem;color:#cbd5e1}
-  .check-item:last-child{border-bottom:none}
-  .check-box{width:18px;height:18px;border:2px solid rgba(184,134,11,.5);border-radius:4px;flex-shrink:0;margin-top:1px}
-  .check-num{color:#b8860b;font-weight:700;flex-shrink:0;min-width:20px}
-
-  .print-btn{display:block;margin:32px auto 0;padding:12px 32px;background:#b8860b;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;letter-spacing:.03em}
-  .print-btn:hover{background:#d4a017}
-
-  .footer{text-align:center;font-size:.72rem;color:#475569;margin-top:40px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
-
-  @media print{
-    body{background:#fff;color:#1a1a1a;padding:0}
-    .header{background:#0f2847;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .copy-block{background:#f0fdf4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .print-btn{display:none}
-    .ficha{break-inside:avoid}
-    .check-item{break-inside:avoid}
-  }
-</style>
-</head>
-<body>
-<div class="page">
-
-  <div class="header">
-    <div class="header-eyebrow">SYNKRO · Diseño y Armado</div>
-    <div class="header-title">Guía de Armado — Tiempo 2</div>
-    <div class="header-sub">${escP(clientName)} &nbsp;·&nbsp; ${escP(mes)}</div>
-    <div class="header-meta">
-      ${giro ? `<span class="meta-chip"><strong>Giro:</strong>${escP(giro)}</span>` : ''}
-      <span class="meta-chip"><strong>Código campaña:</strong>${escP(activeCode)}</span>
-      <span class="meta-chip"><strong>Copy:</strong>Aprobado desde portal del cliente</span>
-    </div>
-  </div>
-
-  ${allFichas}
-
-  <div class="seccion-titulo">✅ Checklist de Producción</div>
-  <div class="checklist-wrap">${checklistHtml}</div>
-
-  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
-
-  <div class="footer">Generado por Motor Synkro &nbsp;·&nbsp; ${escP(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }))}</div>
-</div>
-</body>
-</html>`;
-
-  triggerDownload(
-    new Blob([html], { type: 'text/html;charset=utf-8' }),
-    `guia-armado-${slug}-${slugify(mes)}.html`
-  );
+    const d = await res.json();
+    if (d.error) { showToast('Error API: ' + d.error.message, 'error'); return null; }
+    return d.content?.[0]?.text || null;
+  } catch(e) { showToast('Error de red: ' + e.message, 'error'); return null; }
 }
+
+function downloadHTML(html, filename) {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getClientNameSlug() {
+  const name = (clientData && (
+    clientData.identidad?.nombre_comercial ||
+    clientData.identidad?.nombre ||
+    clientData.nombre
+  )) || 'cliente';
+  return slugify(name);
+}
+
+async function generarADNVisual(data) {
+  const client  = clientData || {};
+  const id      = client.identidad || {};
+  const marca   = client.marca     || {};
+  const negocio = client.negocio   || {};
+  const posts   = data.posts       || {};
+  const igSample = (posts.instagram || []).slice(0, 3).map((p,i) =>
+    `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
+
+  const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${id.nombre_comercial || 'Cliente'}".
+
+DATOS DEL CLIENTE:
+- Giro: ${id.giro || ''} — ${id.descripcion || ''}
+- Tono de marca: ${marca.tono || ''}
+- Color principal: ${marca.color_principal || ''}
+- Color secundario: ${marca.color_secundario || ''}
+- Referencias de marca: ${marca.referencias || ''}
+- Servicio estrella: ${negocio.servicio_estrella || ''}
+- Cliente ideal: ${negocio.cliente_ideal || ''}
+- Diferenciador: ${negocio.diferenciador || ''}
+
+EJEMPLOS DE COPY APROBADO:
+${igSample}
+
+ESTRUCTURA DEL DOCUMENTO HTML:
+El documento debe tener 5 tabs navegables con JavaScript puro:
+1. DIAGNÓSTICO — análisis de presencia digital actual, oportunidades, posicionamiento sugerido
+2. IDENTIDAD VISUAL — paleta de colores con hex codes derivados del brief, tipografías sugeridas, 4 estéticas visuales con descripción
+3. ESTRUCTURA DE COPY — fórmula de copy por red (IG, FB, TK) con ejemplos reales del cliente
+4. REGLAS OPERATIVAS — 8 reglas no negociables numeradas, Do's and Don'ts específicos del cliente
+5. SISTEMA DE PLANTILLAS — tamaños (1080x1080, 1080x1920), estructura visual, jerarquía tipográfica
+
+DISEÑO: fondo #0f2847, acento #0d6e63, dorado #b8860b, fuente system-ui, tabs con JS puro, responsivo, botón imprimir al final, header con texto SYNKRO.
+Genera SOLO el HTML completo sin explicaciones. Empieza con <!DOCTYPE html>`;
+
+  const html = await callClaudeForHTML(prompt);
+  if (html) downloadHTML(html, `ADN-Visual-${getClientNameSlug()}-${getMonthData().mes}.html`);
+}
+
+async function generarBriefMaterial(data) {
+  const client  = clientData || {};
+  const id      = client.identidad || {};
+  const negocio = client.negocio   || {};
+  const posts   = data.posts       || {};
+  const igPosts = (posts.instagram || []).map((p,i) =>
+    `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
+
+  const prompt = `Eres el director de producción de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas) que sea el Brief de Material para el cliente "${id.nombre_comercial || 'Cliente'}".
+
+DATOS DEL CLIENTE:
+- Giro: ${id.giro || ''} — ${id.descripcion || ''}
+- Servicio estrella: ${negocio.servicio_estrella || ''}
+- Precio promedio: ${negocio.precio_promedio || ''}
+- Ciudad: ${id.ciudad || ''}
+
+POSTS DE INSTAGRAM A PRODUCIR (${(posts.instagram||[]).length} posts):
+${igPosts}
+
+ESTRUCTURA DEL DOCUMENTO HTML — 3 tabs navegables:
+1. DIAGNÓSTICO DE POSTS — tabla por post: número, copy resumido, estado (✓ Listo / ⚙ Editar / ◑ Canva / ✗ Nuevo), tratamiento recomendado, nota de producción
+2. SESIÓN FOTOGRÁFICA — tomas necesarias agrupadas por categoría, especificaciones técnicas (iPhone 4K, fondos, iluminación, ángulos)
+3. CHECKLIST DE PRODUCCIÓN — checklist marcable interactivo en 3 fases: Antes de producir (10 items), Producción en Canva (8 items), Entrega al cliente (5 items)
+
+DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, tabs JS puro, checkboxes funcionales, contador de progreso, botón imprimir.
+Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
+
+  const html = await callClaudeForHTML(prompt);
+  if (html) downloadHTML(html, `Brief-Material-${getClientNameSlug()}-${getMonthData().mes}.html`);
+}
+
+async function generarPromptsIA(data) {
+  const client  = clientData || {};
+  const id      = client.identidad || {};
+  const marca   = client.marca     || {};
+  const posts   = data.posts       || {};
+  const igPosts = (posts.instagram || []).map((p,i) =>
+    `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
+  const tkPosts = (posts.tiktok || []).map((p,i) =>
+    `TK ${i+1}: ${p.caption || p.post || ''}`).join('\n');
+
+  const prompt = `Eres el director creativo de SYNKRO. Genera un documento HTML completo y autocontenido (sin dependencias externas) con los Prompts de IA para el cliente "${id.nombre_comercial || 'Cliente'}".
+
+DATOS DEL CLIENTE:
+- Giro: ${id.giro || ''} — ${id.descripcion || ''}
+- Tono: ${marca.tono || ''}
+- Color principal: ${marca.color_principal || ''}
+- Ciudad: ${id.ciudad || ''}
+
+POSTS DE INSTAGRAM (${(posts.instagram||[]).length}):
+${igPosts}
+
+POSTS DE TIKTOK (${(posts.tiktok||[]).length}):
+${tkPosts}
+
+ESTRUCTURA: layout dos columnas, sidebar izquierdo con lista de posts, contenido derecho con fichas.
+Por cada post de Instagram: número y copy (header), instrucción de producción, prompt Imagen 3 en inglés (80-120 palabras, sin texto en imagen, colores de marca, botón Copiar funcional), instrucción animación Canva, copy aprobado de referencia.
+Al final: sección TikTok con todos los captions en cards con botón copiar.
+Perfil de personaje: queretano/a 35-50 años, NSE medio-alto, casual-premium, expresión natural.
+
+DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, sidebar sticky, fuente system-ui, botones copiar con feedback visual, botón imprimir.
+Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
+
+  const html = await callClaudeForHTML(prompt);
+  if (html) downloadHTML(html, `Prompts-IA-${getClientNameSlug()}-${getMonthData().mes}.html`);
+}
+
+async function generarCalendarioVisualHTML(data) {
+  const client = clientData || {};
+  const id     = client.identidad || {};
+  const cal    = data.calendarioPublicacion;
+  if (!cal) { showToast('No hay datos de calendario en esta campaña', 'error'); return; }
+
+  const prompt = `Eres el director de operaciones de SYNKRO. Genera un documento HTML completo y autocontenido (sin dependencias externas) con el Calendario Visual para el cliente "${id.nombre_comercial || 'Cliente'}".
+
+DATOS DEL CALENDARIO (JSON):
+${JSON.stringify(cal, null, 2).substring(0, 3000)}
+
+ESTRUCTURA: header con cliente/mes/total posts, posts por semana como tarjetas (día, fecha, horario, badge de red con colores: IG morado, FB azul, TK rojo/negro, descripción, badge de promo si aplica), semana con más posts marcada como Semana Clave, leyenda de promos, notas estratégicas al final, botón imprimir.
+
+DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, hover en tarjetas, responsivo.
+Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
+
+  const html = await callClaudeForHTML(prompt);
+  if (html) downloadHTML(html, `Calendario-Visual-${getClientNameSlug()}-${getMonthData().mes}.html`);
+}
+
+async function generarProduccionHTML(codeOverride) {
+  const code = codeOverride || currentCampaignCode;
+  if (!code) { showToast('No hay campaña activa', 'error'); return; }
+  showToast('Leyendo posts aprobados de Firebase…', 'info');
+  try {
+    const snap = await db.ref('campaigns/' + code).once('value');
+    const d    = snap.val();
+    if (!d || !d.posts) { showToast('No se encontró la campaña', 'error'); return; }
+    const clientName = (clientData?.identidad?.nombre_comercial) || d.clientName || 'Cliente';
+    const mes        = d.mes || '';
+    const igPosts    = d.posts.instagram || [];
+    const fbPosts    = d.posts.facebook  || [];
+    const tkPosts    = d.posts.tiktok    || [];
+
+    const igRows = igPosts.map((p,i) => `<tr><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08);color:#aaa;font-size:.8rem">${i+1}</td><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08)">${escHtml(p.post||p.caption||'')}</td><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08);font-size:.75rem;color:#aaa">${escHtml((p.hashtags||'').split(' ').slice(0,5).join(' '))}</td></tr>`).join('');
+    const fbRows = fbPosts.map((p,i) => `<tr><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08);color:#aaa;font-size:.8rem">${i+1}</td><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08)">${escHtml(p.post||p.caption||'')}</td></tr>`).join('');
+    const tkRows = tkPosts.map((p,i) => `<tr><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08);color:#aaa;font-size:.8rem">${i+1}</td><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08)">${escHtml(p.post||p.caption||'')}</td><td style="padding:8px;border-bottom:1px solid rgba(255,255,255,.08);font-size:.75rem;color:#aaa">${escHtml((p.hashtags||'').split(' ').slice(0,4).join(' '))}</td></tr>`).join('');
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Producción — ${escHtml(clientName)} · ${escHtml(mes)}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#0f2847;color:#e8eaf6;min-height:100vh}.hdr{background:linear-gradient(135deg,#0d6e63,#0f2847);padding:32px 40px;border-bottom:2px solid #b8860b}.hdr h1{font-size:1.6rem;color:#f0c040;font-weight:700}.hdr p{font-size:.9rem;color:rgba(255,255,255,.6);margin-top:4px}.tabs{display:flex;gap:4px;padding:16px 40px 0;background:#0a1f38;border-bottom:1px solid rgba(255,255,255,.1)}.tab{padding:10px 18px;border:none;background:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.85rem;border-bottom:2px solid transparent;transition:all .2s}.tab.active{color:#f0c040;border-bottom-color:#b8860b}.content{padding:32px 40px;display:none}.content.active{display:block}table{width:100%;border-collapse:collapse;font-size:.85rem}th{text-align:left;padding:10px 8px;color:#f0c040;border-bottom:1px solid #b8860b;font-size:.75rem;text-transform:uppercase}.print-btn{position:fixed;bottom:24px;right:24px;background:#b8860b;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.85rem}@media print{.print-btn,.tabs{display:none}.content{display:block!important;page-break-after:always}}</style>
+</head><body>
+<div class="hdr"><h1>📋 Documento de Producción</h1><p>${escHtml(clientName)} · ${escHtml(mes)} · Código: ${escHtml(code)}</p></div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('ig',this)">📷 Instagram (${igPosts.length})</button>
+  <button class="tab" onclick="showTab('fb',this)">📘 Facebook (${fbPosts.length})</button>
+  <button class="tab" onclick="showTab('tk',this)">🎵 TikTok (${tkPosts.length})</button>
+</div>
+<div class="content active" id="tab-ig"><table><thead><tr><th>#</th><th>Copy aprobado</th><th>Hashtags</th></tr></thead><tbody>${igRows}</tbody></table></div>
+<div class="content" id="tab-fb"><table><thead><tr><th>#</th><th>Copy aprobado</th></tr></thead><tbody>${fbRows}</tbody></table></div>
+<div class="content" id="tab-tk"><table><thead><tr><th>#</th><th>Caption TikTok</th><th>Hashtags</th></tr></thead><tbody>${tkRows}</tbody></table></div>
+<button class="print-btn" onclick="window.print()">🖨 Imprimir / PDF</button>
+<script>function showTab(id,btn){document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');}</script>
+</body></html>`;
+
+    downloadHTML(html, `Produccion-${getClientNameSlug()}-${mes}.html`);
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function generarResumenEjecutivoHTML(data) {
+  downloadResumenHtml(data);
+}
+
 
 // ── JSON download helper ───────────────────────────────────────────────────
 
@@ -2800,6 +2580,10 @@ function buildApprovalData(code) {
       tiktok:    posts.tiktok    || [],
     },
     fichaProduccion: (campaignData && campaignData.fichaProduccion) || null,
+    maestro:               (campaignData && campaignData.maestro)              || null,
+    estrategiaCampana:     (campaignData && campaignData.estrategiaCampana)    || null,
+    calendarioPublicacion: (campaignData && campaignData.calendarioPublicacion) || null,
+    _clientSlug:           currentClientSlug || null,
     approvals,
     lastUpdated: Date.now(),
   };
@@ -2999,13 +2783,15 @@ function renderStatusSection() {
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📅 Calendario</button>
-          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📸 Guía de Materiales</button>
+          <button class="btn-card-action btn-card-adn" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;">🎨 ADN Visual</button>
+          <button class="btn-card-action btn-card-briefmat" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;">📸 Brief Material</button>
+          <button class="btn-card-action btn-card-promptsia" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;">✨ Prompts IA</button>
+          <button class="btn-card-action btn-card-calvisual" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;">📅 Calendario Visual</button>
         </div>
         ${status === 'complete' ? `
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">🎨 Guía de Armado</button>
-          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📄 Resumen Ejecutivo</button>
+          <button class="btn-card-action btn-card-produccion" data-code="${escHtml(sess.code)}" style="color:var(--teal-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--teal);background:rgba(13,110,99,.1);cursor:pointer;">🗂️ Producción</button>
+          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}" style="color:var(--teal-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--teal);background:rgba(13,110,99,.1);cursor:pointer;">📄 Resumen Ejecutivo</button>
         </div>` : ''}
       </div>
     `;
@@ -3035,60 +2821,34 @@ function renderStatusSection() {
         .catch(err => showToast('Error eliminando: ' + err.message, 'error'));
     });
 
-    // Botones de acción de tarjeta (Guías y Resumen)
-    card.querySelector('.btn-card-materiales').addEventListener('click', function () {
-      generarGuiaMateriales({}, this.dataset.code);
+    // Botones de acción de tarjeta (Entregables con IA)
+    card.querySelector('.btn-card-adn')?.addEventListener('click', async function() {
+      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
+      const d = snap.val(); if (!d) return;
+      generarADNVisual(d);
     });
-    card.querySelector('.btn-card-armado')?.addEventListener('click', function () {
-      generarGuiaArmado(this.dataset.code);
+    card.querySelector('.btn-card-briefmat')?.addEventListener('click', async function() {
+      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
+      const d = snap.val(); if (!d) return;
+      generarBriefMaterial(d);
     });
-    card.querySelector('.btn-card-resumen')?.addEventListener('click', async function () {
-      const code = this.dataset.code;
-      try {
-        const campSnap = await db.ref(`campaigns/${code}`).once('value');
-        const d = campSnap.val();
-        if (!d) { showToast('No se encontró la campaña', 'error'); return; }
-
-        // Intentar enriquecer con datos del historial de Firebase
-        const clientSlug = d._clientSlug || '';
-        const mesRaw     = d._mes || '';
-        const año        = d.createdAt ? new Date(d.createdAt).getFullYear() : new Date().getFullYear();
-        const mesSlug    = slugify(mesRaw) + '-' + año;
-
-        if (clientSlug && mesSlug) {
-          try {
-            const histSnap = await db.ref(`clientes/${clientSlug}/historial/${mesSlug}`).once('value');
-            const h = histSnap.val();
-            if (h) {
-              // Reconstruir maestro y estrategiaCampana con los datos del historial
-              d.maestro = d.maestro || {};
-              d.estrategiaCampana = d.estrategiaCampana || {};
-              d.maestro.anguloCampana        = d.maestro.anguloCampana   || h.anguloNarrativo  || '';
-              d.maestro.emocionPrincipal     = d.maestro.emocionPrincipal|| h.emocionPrincipal || '';
-              d.maestro.palabrasClave        = d.maestro.palabrasClave   || h.temasUsados      || [];
-              d.maestro.hashtags             = d.maestro.hashtags        || h.hashtags         || {};
-              d.estrategiaCampana.anguloNarrativo  = d.estrategiaCampana.anguloNarrativo  || h.anguloNarrativo  || '';
-              d.estrategiaCampana.mensajeClave     = d.estrategiaCampana.mensajeClave     || h.mensajeClave     || '';
-              d.estrategiaCampana.emocionPrincipal = d.estrategiaCampana.emocionPrincipal || h.emocionPrincipal || '';
-              d.estrategiaCampana.tono             = d.estrategiaCampana.tono             || h.tono             || '';
-              d.estrategiaCampana.pilaresDeContenido = d.estrategiaCampana.pilaresDeContenido
-                || (h.pilaresContenido || []).map(p => ({ pilar: p, porcentaje: '', descripcion: '' }));
-            }
-          } catch (_) { /* historial opcional — continuar sin él */ }
-        }
-
-        downloadResumenHtml(d);
-      } catch (err) {
-        showToast('Error: ' + err.message, 'error');
-      }
+    card.querySelector('.btn-card-promptsia')?.addEventListener('click', async function() {
+      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
+      const d = snap.val(); if (!d) return;
+      generarPromptsIA(d);
     });
-    card.querySelector('.btn-card-calendario')?.addEventListener('click', function () {
-      const code = this.dataset.code;
-      db.ref(`campaigns/${code}/calendarioPublicacion`).once('value').then(snap => {
-        const d = snap.val();
-        if (d) downloadJson(d, 'calendario');
-        else showToast('Esta campaña no tiene calendario generado', 'error');
-      }).catch(err => showToast('Error: ' + err.message, 'error'));
+    card.querySelector('.btn-card-calvisual')?.addEventListener('click', async function() {
+      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
+      const d = snap.val(); if (!d) return;
+      generarCalendarioVisualHTML(d);
+    });
+    card.querySelector('.btn-card-produccion')?.addEventListener('click', function() {
+      generarProduccionHTML(this.dataset.code);
+    });
+    card.querySelector('.btn-card-resumen')?.addEventListener('click', async function() {
+      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
+      const d = snap.val(); if (!d) return;
+      generarResumenEjecutivoHTML(d);
     });
 
     // Botones de editar post
