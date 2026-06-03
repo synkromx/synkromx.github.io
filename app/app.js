@@ -1597,6 +1597,12 @@ El documento debe tener 5 tabs navegables con JavaScript puro:
 5. SISTEMA DE PLANTILLAS — tamaños (1080x1080, 1080x1920), estructura visual, jerarquía tipográfica
 
 DISEÑO: fondo #0f2847, acento #0d6e63, dorado #b8860b, fuente system-ui, tabs con JS puro, responsivo, botón imprimir al final, header con texto SYNKRO.
+RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
+- Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
+- Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
+- El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor
+- No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos
+
 Genera SOLO el HTML completo sin explicaciones. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
@@ -1628,6 +1634,12 @@ ESTRUCTURA DEL DOCUMENTO HTML — 3 tabs navegables:
 3. CHECKLIST DE PRODUCCIÓN — checklist marcable interactivo en 3 fases: Antes de producir (10 items), Producción en Canva (8 items), Entrega al cliente (5 items)
 
 DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, tabs JS puro, checkboxes funcionales, contador de progreso, botón imprimir.
+RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
+- Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
+- Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
+- El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor
+- No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos
+
 Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
@@ -1664,6 +1676,12 @@ Al final: sección TikTok con todos los captions en cards con botón copiar.
 Perfil de personaje: queretano/a 35-50 años, NSE medio-alto, casual-premium, expresión natural.
 
 DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, sidebar sticky, fuente system-ui, botones copiar con feedback visual, botón imprimir.
+RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
+- Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
+- Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
+- El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor
+- No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos
+
 Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
@@ -1684,6 +1702,12 @@ ${JSON.stringify(cal, null, 2).substring(0, 3000)}
 ESTRUCTURA: header con cliente/mes/total posts, posts por semana como tarjetas (día, fecha, horario, badge de red con colores: IG morado, FB azul, TK rojo/negro, descripción, badge de promo si aplica), semana con más posts marcada como Semana Clave, leyenda de promos, notas estratégicas al final, botón imprimir.
 
 DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, hover en tarjetas, responsivo.
+RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
+- Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
+- Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
+- El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor
+- No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos
+
 Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
