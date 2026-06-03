@@ -1354,6 +1354,13 @@ function generateCampaignExports(data) {
               <span class="btn-export-sub">JSON · programa de publicación</span>
             </span>
           </button>` : ''}
+          <button class="btn-export btn-export-mat" id="btnDlMateriales">
+            <span class="btn-export-icon">📸</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Guía de Materiales</span>
+              <span class="btn-export-sub">HTML · sesión de fotos y video</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>`;
@@ -1368,6 +1375,8 @@ function generateCampaignExports(data) {
 
   const btnCal = wrapper.querySelector('#btnDlCal');
   if (btnCal) btnCal.addEventListener('click', () => downloadJson(data.calendarioPublicacion, 'calendario'));
+
+  wrapper.querySelector('#btnDlMateriales').addEventListener('click', () => generarGuiaMateriales(data));
 }
 
 // ── Resumen ejecutivo HTML ─────────────────────────────────────────────────
