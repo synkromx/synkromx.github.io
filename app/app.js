@@ -45,10 +45,11 @@ const db   = firebase.database();
 const auth = firebase.auth();
 
 // ── State ──────────────────────────────────────────────────────────────────
-let clientData        = null;
-let campaignData      = null;
-let cachedSessions    = [];
-let currentClientSlug = null;
+let clientData          = null;
+let campaignData        = null;
+let cachedSessions      = [];
+let currentClientSlug   = null;
+let currentCampaignCode = null;
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -2360,6 +2361,7 @@ function handleSendForApproval() {
     return;
   }
   const code = generateApprovalCode();
+  currentCampaignCode = code;
   const data = buildApprovalData(code);
   db.ref('campaigns/' + code).set(data)
     .then(() => {
@@ -3994,6 +3996,7 @@ function reimportarCampana() {
           showToast('JSON inválido — no contiene posts', 'error'); return;
         }
         const code = generateApprovalCode();
+        currentCampaignCode = code;
         const clientName = (data.maestro && data._clientSlug) ? data._clientSlug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) : 'Cliente';
         const mes = data._mes || 'Sin mes';
         const approvals = {};
