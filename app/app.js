@@ -2999,13 +2999,13 @@ function renderStatusSection() {
       </div>
       <div class="status-card-actions">
         <div class="status-actions-group">
-          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}">📅 Calendario</button>
-          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}">📸 Guía de Materiales</button>
+          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📅 Calendario</button>
+          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📸 Guía de Materiales</button>
         </div>
         ${status === 'complete' ? `
         <div class="status-actions-group">
-          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}">🎨 Guía de Armado</button>
-          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}">📄 Resumen Ejecutivo</button>
+          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">🎨 Guía de Armado</button>
+          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📄 Resumen Ejecutivo</button>
         </div>` : ''}
       </div>
     `;
