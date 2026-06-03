@@ -1496,7 +1496,31 @@ function downloadResumenHtml(data) {
 
 // ── Guía de Materiales ────────────────────────────────────────────────────
 
-function generarGuiaMateriales(data) {
+async function generarGuiaMateriales(data, codeOverride) {
+  // Si se pasa codeOverride, cargar datos desde Firebase
+  if (codeOverride) {
+    try {
+      const snap = await db.ref(`campaigns/${codeOverride}`).once('value');
+      const fbData = snap.val();
+      if (!fbData) { showToast('No se encontró la campaña en Firebase', 'error'); return; }
+      // Intentar cargar brief del cliente
+      const slug = fbData._clientSlug || slugify(fbData.clientName || '');
+      let fbClient = clientData;
+      if (slug) {
+        const briefSnap = await db.ref(`clientes/${slug}/brief`).once('value');
+        if (briefSnap.exists()) fbClient = briefSnap.val();
+      }
+      // Reasignar temporalmente y rellamar sin override
+      const prevClient = clientData;
+      clientData = fbClient || clientData;
+      await generarGuiaMateriales(fbData, null);
+      clientData = prevClient;
+      return;
+    } catch (err) {
+      showToast('Error cargando campaña: ' + err.message, 'error'); return;
+    }
+  }
+
   const month      = getMonthData();
   const posts      = data.posts || {};
   const igPosts    = posts.instagram || [];
@@ -1507,7 +1531,7 @@ function generarGuiaMateriales(data) {
   const clientName = (clientData && (
     clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
     clientData.negocio?.nombre || clientData.nombre || clientData.name
-  )) || 'Cliente';
+  )) || data.clientName || 'Cliente';
 
   const giro       = (clientData?.identidad?.giro || clientData?.negocio?.giro || '').toLowerCase();
   const servicios  = clientData?.negocio?.servicios || clientData?.identidad?.servicios || '';
@@ -1708,29 +1732,44 @@ function generarGuiaMateriales(data) {
 
 // ── Guía de Armado ────────────────────────────────────────────────────────
 
-async function generarGuiaArmado() {
-  if (!currentCampaignCode) {
+async function generarGuiaArmado(codeOverride) {
+  const activeCode = codeOverride || currentCampaignCode;
+  if (!activeCode) {
     showToast('No hay campaña activa. Genera o reimporta una campaña primero.', 'error');
     return;
   }
 
   let firebasePosts;
+  let fbCampaign = {};
   try {
-    const snap = await db.ref(`campaigns/${currentCampaignCode}/posts`).once('value');
-    firebasePosts = snap.val() || {};
+    const snap = await db.ref(`campaigns/${activeCode}`).once('value');
+    fbCampaign = snap.val() || {};
+    firebasePosts = fbCampaign.posts || {};
   } catch (err) {
     showToast('Error leyendo campaña de Firebase: ' + err.message, 'error');
     return;
   }
 
+  // Si viene de override, intentar cargar el brief del cliente desde Firebase
+  let effectiveClient = clientData;
+  if (codeOverride) {
+    const slug = fbCampaign._clientSlug || slugify(fbCampaign.clientName || '');
+    if (slug) {
+      try {
+        const briefSnap = await db.ref(`clientes/${slug}/brief`).once('value');
+        if (briefSnap.exists()) effectiveClient = briefSnap.val();
+      } catch (_) {}
+    }
+  }
+
   const month      = getMonthData();
-  const clientName = (clientData && (
-    clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
-    clientData.negocio?.nombre || clientData.nombre || clientData.name
-  )) || 'Cliente';
-  const giro = clientData?.identidad?.giro || clientData?.negocio?.giro || '';
+  const clientName = (effectiveClient && (
+    effectiveClient.identidad?.nombre_comercial || effectiveClient.identidad?.nombre ||
+    effectiveClient.negocio?.nombre || effectiveClient.nombre || effectiveClient.name
+  )) || fbCampaign.clientName || 'Cliente';
+  const giro = effectiveClient?.identidad?.giro || effectiveClient?.negocio?.giro || '';
   const slug = slugify(clientName);
-  const mes  = month.mes || 'mes';
+  const mes  = month.mes || fbCampaign._mes || 'mes';
 
   const netConfig = {
     instagram: { label: 'Instagram', color: '#e1306c', canvas: '1080 × 1080 px', ratio: '1:1' },
@@ -1889,7 +1928,7 @@ async function generarGuiaArmado() {
     <div class="header-sub">${escP(clientName)} &nbsp;·&nbsp; ${escP(mes)}</div>
     <div class="header-meta">
       ${giro ? `<span class="meta-chip"><strong>Giro:</strong>${escP(giro)}</span>` : ''}
-      <span class="meta-chip"><strong>Código campaña:</strong>${escP(currentCampaignCode)}</span>
+      <span class="meta-chip"><strong>Código campaña:</strong>${escP(activeCode)}</span>
       <span class="meta-chip"><strong>Copy:</strong>Aprobado desde portal del cliente</span>
     </div>
   </div>
@@ -2956,8 +2995,18 @@ function renderStatusSection() {
       <div class="status-card-footer">
         <a href="${escHtml(getApprovalUrl(sess.code))}" target="_blank" class="btn-open-approval">Ver página del cliente ↗</a>
         ${expired ? `<button class="btn-extend-approval" data-code="${escHtml(sess.code)}">⏳ Extender 24h</button>` : ''}
-        <button class="btn-usar-campana" data-code="${escHtml(sess.code)}">📋 Usar esta campaña</button>
         <button class="btn-delete-approval" data-code="${escHtml(sess.code)}">Eliminar</button>
+      </div>
+      <div class="status-card-actions">
+        <div class="status-actions-group">
+          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}">📅 Calendario</button>
+          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}">📸 Guía de Materiales</button>
+        </div>
+        ${status === 'complete' ? `
+        <div class="status-actions-group">
+          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}">🎨 Guía de Armado</button>
+          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}">📄 Resumen Ejecutivo</button>
+        </div>` : ''}
       </div>
     `;
 
@@ -2976,12 +3025,6 @@ function renderStatusSection() {
       });
     }
 
-    card.querySelector('.btn-usar-campana').addEventListener('click', function () {
-      const code = this.dataset.code;
-      currentCampaignCode = code;
-      showToast(`Campaña ${code} activada — ya puedes generar la Guía de Armado`, 'success');
-    });
-
     card.querySelector('.btn-delete-approval').addEventListener('click', function () {
       const code = this.dataset.code;
       const primera = confirm('⚠️ ¿Eliminar el link de aprobación ' + code + '?\nEsto borra la campaña de Firebase.');
@@ -2990,6 +3033,30 @@ function renderStatusSection() {
       if (!segunda) return;
       db.ref('campaigns/' + code).remove()
         .catch(err => showToast('Error eliminando: ' + err.message, 'error'));
+    });
+
+    // Botones de acción de tarjeta (Guías y Resumen)
+    card.querySelector('.btn-card-materiales').addEventListener('click', function () {
+      generarGuiaMateriales({}, this.dataset.code);
+    });
+    card.querySelector('.btn-card-armado')?.addEventListener('click', function () {
+      generarGuiaArmado(this.dataset.code);
+    });
+    card.querySelector('.btn-card-resumen')?.addEventListener('click', function () {
+      const code = this.dataset.code;
+      db.ref(`campaigns/${code}`).once('value').then(snap => {
+        const d = snap.val();
+        if (d) downloadResumenHtml(d);
+        else showToast('No se encontró la campaña', 'error');
+      }).catch(err => showToast('Error: ' + err.message, 'error'));
+    });
+    card.querySelector('.btn-card-calendario')?.addEventListener('click', function () {
+      const code = this.dataset.code;
+      db.ref(`campaigns/${code}/calendarioPublicacion`).once('value').then(snap => {
+        const d = snap.val();
+        if (d) downloadJson(d, 'calendario');
+        else showToast('Esta campaña no tiene calendario generado', 'error');
+      }).catch(err => showToast('Error: ' + err.message, 'error'));
     });
 
     // Botones de editar post
