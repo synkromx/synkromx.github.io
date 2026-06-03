@@ -1361,7 +1361,7 @@ function generateCampaignExports(data) {
               <span class="btn-export-sub">HTML · sesión de fotos y video</span>
             </span>
           </button>
-          <button class="btn-export btn-export-armado" id="btnDlArmado">
+          <button class="btn-export btn-export-armado" id="btnDlArmado" style="border:1px solid #b8860b;background:rgba(184,134,11,.1)">
             <span class="btn-export-icon">🎨</span>
             <span class="btn-export-text">
               <span class="btn-export-label">Guía de Armado</span>
