@@ -3042,13 +3042,45 @@ function renderStatusSection() {
     card.querySelector('.btn-card-armado')?.addEventListener('click', function () {
       generarGuiaArmado(this.dataset.code);
     });
-    card.querySelector('.btn-card-resumen')?.addEventListener('click', function () {
+    card.querySelector('.btn-card-resumen')?.addEventListener('click', async function () {
       const code = this.dataset.code;
-      db.ref(`campaigns/${code}`).once('value').then(snap => {
-        const d = snap.val();
-        if (d) downloadResumenHtml(d);
-        else showToast('No se encontró la campaña', 'error');
-      }).catch(err => showToast('Error: ' + err.message, 'error'));
+      try {
+        const campSnap = await db.ref(`campaigns/${code}`).once('value');
+        const d = campSnap.val();
+        if (!d) { showToast('No se encontró la campaña', 'error'); return; }
+
+        // Intentar enriquecer con datos del historial de Firebase
+        const clientSlug = d._clientSlug || '';
+        const mesRaw     = d._mes || '';
+        const año        = d.createdAt ? new Date(d.createdAt).getFullYear() : new Date().getFullYear();
+        const mesSlug    = slugify(mesRaw) + '-' + año;
+
+        if (clientSlug && mesSlug) {
+          try {
+            const histSnap = await db.ref(`clientes/${clientSlug}/historial/${mesSlug}`).once('value');
+            const h = histSnap.val();
+            if (h) {
+              // Reconstruir maestro y estrategiaCampana con los datos del historial
+              d.maestro = d.maestro || {};
+              d.estrategiaCampana = d.estrategiaCampana || {};
+              d.maestro.anguloCampana        = d.maestro.anguloCampana   || h.anguloNarrativo  || '';
+              d.maestro.emocionPrincipal     = d.maestro.emocionPrincipal|| h.emocionPrincipal || '';
+              d.maestro.palabrasClave        = d.maestro.palabrasClave   || h.temasUsados      || [];
+              d.maestro.hashtags             = d.maestro.hashtags        || h.hashtags         || {};
+              d.estrategiaCampana.anguloNarrativo  = d.estrategiaCampana.anguloNarrativo  || h.anguloNarrativo  || '';
+              d.estrategiaCampana.mensajeClave     = d.estrategiaCampana.mensajeClave     || h.mensajeClave     || '';
+              d.estrategiaCampana.emocionPrincipal = d.estrategiaCampana.emocionPrincipal || h.emocionPrincipal || '';
+              d.estrategiaCampana.tono             = d.estrategiaCampana.tono             || h.tono             || '';
+              d.estrategiaCampana.pilaresDeContenido = d.estrategiaCampana.pilaresDeContenido
+                || (h.pilaresContenido || []).map(p => ({ pilar: p, porcentaje: '', descripcion: '' }));
+            }
+          } catch (_) { /* historial opcional — continuar sin él */ }
+        }
+
+        downloadResumenHtml(d);
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
     });
     card.querySelector('.btn-card-calendario')?.addEventListener('click', function () {
       const code = this.dataset.code;
