@@ -1567,13 +1567,14 @@ function getClientNameSlug() {
 async function generarADNVisual(data) {
   const client  = clientData || {};
   const id      = client.identidad || {};
+  const clientNameDisplay = id.nombre_comercial || id.nombre || data.clientName || 'Cliente';
   const marca   = client.marca     || {};
   const negocio = client.negocio   || {};
   const posts   = data.posts       || {};
   const igSample = (posts.instagram || []).slice(0, 6).map((p,i) =>
     `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
 
-  const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${id.nombre_comercial || 'Cliente'}".
+  const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${clientNameDisplay}".
 
 DATOS DEL CLIENTE:
 - Giro: ${id.giro || ''} — ${id.descripcion || ''}
@@ -1589,14 +1590,14 @@ EJEMPLOS DE COPY APROBADO:
 ${igSample}
 
 ESTRUCTURA DEL DOCUMENTO HTML:
-El documento debe tener 5 tabs navegables con JavaScript puro:
+El documento debe tener 5 tabs navegables con CSS puro (input radio):
 1. DIAGNÓSTICO — análisis de presencia digital actual, oportunidades, posicionamiento sugerido
 2. IDENTIDAD VISUAL — paleta de colores con hex codes derivados del brief, tipografías sugeridas, 4 estéticas visuales con descripción
 3. ESTRUCTURA DE COPY — fórmula de copy por red (IG, FB, TK) con ejemplos reales del cliente
 4. REGLAS OPERATIVAS — 8 reglas no negociables numeradas, Do's and Don'ts específicos del cliente
 5. SISTEMA DE PLANTILLAS — tamaños (1080x1080, 1080x1920), estructura visual, jerarquía tipográfica
 
-DISEÑO: fondo #0f2847, acento #0d6e63, dorado #b8860b, fuente system-ui, tabs con JS puro, responsivo, botón imprimir al final, header con texto SYNKRO.
+DISEÑO: fondo #0f2847, acento #0d6e63, dorado #b8860b, fuente system-ui, tabs CSS puro (input radio), responsivo, botón imprimir al final, header con texto SYNKRO.
 RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
 - Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
 - Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
@@ -1612,12 +1613,13 @@ Genera SOLO el HTML completo sin explicaciones. Empieza con <!DOCTYPE html>`;
 async function generarBriefMaterial(data) {
   const client  = clientData || {};
   const id      = client.identidad || {};
+  const clientNameDisplay = id.nombre_comercial || id.nombre || data.clientName || 'Cliente';
   const negocio = client.negocio   || {};
   const posts   = data.posts       || {};
   const igPosts = (posts.instagram || []).map((p,i) =>
     `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
 
-  const prompt = `Eres el director de producción de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas) que sea el Brief de Material para el cliente "${id.nombre_comercial || 'Cliente'}".
+  const prompt = `Eres el director de producción de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas) que sea el Brief de Material para el cliente "${clientNameDisplay}".
 
 DATOS DEL CLIENTE:
 - Giro: ${id.giro || ''} — ${id.descripcion || ''}
@@ -1633,7 +1635,7 @@ ESTRUCTURA DEL DOCUMENTO HTML — 3 tabs navegables:
 2. SESIÓN FOTOGRÁFICA — tomas necesarias agrupadas por categoría, especificaciones técnicas (iPhone 4K, fondos, iluminación, ángulos)
 3. CHECKLIST DE PRODUCCIÓN — checklist marcable interactivo en 3 fases: Antes de producir (10 items), Producción en Canva (8 items), Entrega al cliente (5 items)
 
-DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, tabs JS puro, checkboxes funcionales, contador de progreso, botón imprimir.
+DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, tabs CSS puro (input radio), checkboxes funcionales, contador de progreso, botón imprimir.
 RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
 - Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
 - Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
@@ -2587,7 +2589,8 @@ function buildApprovalData(code) {
   });
 
   const clientName = (clientData && (
-    clientData.nombre
+    clientData.identidad?.nombre_comercial
+    || clientData.nombre
     || clientData.identidad?.nombre
     || clientData.negocio?.nombre
     || clientData.name
