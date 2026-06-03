@@ -1541,7 +1541,9 @@ async function callClaudeForHTML(prompt) {
     });
     const d = await res.json();
     if (d.error) { showToast('Error API: ' + d.error.message, 'error'); return null; }
-    return d.content?.[0]?.text || null;
+    let rawText = d.content?.[0]?.text || '';
+    rawText = rawText.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+    return rawText || null;
   } catch(e) { showToast('Error de red: ' + e.message, 'error'); return null; }
 }
 
