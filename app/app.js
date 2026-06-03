@@ -1361,6 +1361,13 @@ function generateCampaignExports(data) {
               <span class="btn-export-sub">HTML · sesión de fotos y video</span>
             </span>
           </button>
+          <button class="btn-export btn-export-armado" id="btnDlArmado">
+            <span class="btn-export-icon">🎨</span>
+            <span class="btn-export-text">
+              <span class="btn-export-label">Guía de Armado</span>
+              <span class="btn-export-sub">HTML · diseño y copy final</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>`;
@@ -1377,6 +1384,7 @@ function generateCampaignExports(data) {
   if (btnCal) btnCal.addEventListener('click', () => downloadJson(data.calendarioPublicacion, 'calendario'));
 
   wrapper.querySelector('#btnDlMateriales').addEventListener('click', () => generarGuiaMateriales(data));
+  wrapper.querySelector('#btnDlArmado').addEventListener('click', () => generarGuiaArmado());
 }
 
 // ── Resumen ejecutivo HTML ─────────────────────────────────────────────────
@@ -1695,6 +1703,212 @@ function generarGuiaMateriales(data) {
   triggerDownload(
     new Blob([html], { type: 'text/html;charset=utf-8' }),
     `guia-materiales-${slug}-${slugify(mes)}.html`
+  );
+}
+
+// ── Guía de Armado ────────────────────────────────────────────────────────
+
+async function generarGuiaArmado() {
+  if (!currentCampaignCode) {
+    showToast('No hay campaña activa. Genera o reimporta una campaña primero.', 'error');
+    return;
+  }
+
+  let firebasePosts;
+  try {
+    const snap = await db.ref(`campaigns/${currentCampaignCode}/posts`).once('value');
+    firebasePosts = snap.val() || {};
+  } catch (err) {
+    showToast('Error leyendo campaña de Firebase: ' + err.message, 'error');
+    return;
+  }
+
+  const month      = getMonthData();
+  const clientName = (clientData && (
+    clientData.identidad?.nombre_comercial || clientData.identidad?.nombre ||
+    clientData.negocio?.nombre || clientData.nombre || clientData.name
+  )) || 'Cliente';
+  const giro = clientData?.identidad?.giro || clientData?.negocio?.giro || '';
+  const slug = slugify(clientName);
+  const mes  = month.mes || 'mes';
+
+  const netConfig = {
+    instagram: { label: 'Instagram', color: '#e1306c', canvas: '1080 × 1080 px', ratio: '1:1' },
+    facebook:  { label: 'Facebook',  color: '#1877f2', canvas: '1080 × 1080 px', ratio: '1:1' },
+    tiktok:    { label: 'TikTok',    color: '#010101', canvas: '1080 × 1920 px', ratio: '9:16' },
+  };
+
+  // Posición de texto según largo del copy
+  function posicionTexto(copy) {
+    const len = (copy || '').length;
+    if (len < 80)  return 'Centro — texto corto, ocupa zona central del canvas';
+    if (len < 200) return 'Inferior — texto medio, reservar 40% inferior del canvas';
+    return 'Superior — texto largo, comenzar en el tercio superior';
+  }
+
+  // Tamaño de fuente sugerido
+  function tamanoFuente(copy) {
+    const len = (copy || '').length;
+    if (len < 60)  return 'Título: 64px Bold · Cuerpo: 40px Regular';
+    if (len < 150) return 'Título: 56px Bold · Cuerpo: 36px Regular';
+    return 'Título: 48px Bold · Cuerpo: 32px Regular';
+  }
+
+  // Fondo recomendado
+  function fondoRecomendado(net) {
+    if (net === 'tiktok') return 'Video/clip de la sesión o fondo oscuro de marca (#0f2847)';
+    return 'Foto de la sesión (ver Guía de Materiales) o degradado de marca';
+  }
+
+  let pieceCounterIG = 0;
+  let allFichas = '';
+
+  for (const net of ['instagram', 'facebook', 'tiktok']) {
+    const cfg   = netConfig[net];
+    const items = firebasePosts[net];
+    if (!items || !items.length) continue;
+
+    allFichas += `<div class="seccion-titulo">${cfg.label}</div>`;
+
+    items.forEach((item, idx) => {
+      const copy = item.post || item.caption || '';
+      const igRef = net === 'instagram' ? ++pieceCounterIG : null;
+      const matRef = net === 'instagram'
+        ? `📸 Pieza IG ${igRef} de la Guía de Materiales`
+        : net === 'facebook'
+          ? `Puede usar la misma foto de Pieza IG correspondiente`
+          : `🎬 Clip de la sesión de video`;
+
+      allFichas += `
+        <div class="ficha">
+          <div class="ficha-header">
+            <div class="ficha-num-wrap">
+              <span class="ficha-num">Pieza ${idx + 1}</span>
+              <span class="ficha-red" style="background:${cfg.color}20;border-color:${cfg.color}60;color:${cfg.color}">${cfg.label}</span>
+            </div>
+            <span class="ficha-canvas">${cfg.canvas} &nbsp;·&nbsp; ${cfg.ratio}</span>
+          </div>
+          <table class="ficha-tabla">
+            <tr><td class="ft-label">Tipografía título</td><td>DM Sans Bold · ${tamanoFuente(copy).split('·')[0].trim()}</td></tr>
+            <tr><td class="ft-label">Tipografía cuerpo</td><td>DM Sans Regular · ${tamanoFuente(copy).split('·')[1]?.trim() || '36px Regular'}</td></tr>
+            <tr><td class="ft-label">Posición del texto</td><td>${posicionTexto(copy)}</td></tr>
+            <tr><td class="ft-label">Fondo</td><td>${fondoRecomendado(net)}</td></tr>
+            <tr><td class="ft-label">Referencia sesión</td><td>${matRef}</td></tr>
+          </table>
+          <div class="copy-block">
+            <div class="copy-label">Copy listo para usar</div>
+            <div class="copy-text">${escP(copy || '(sin copy)')}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  const checklist = [
+    'Descargar fotos y videos de la sesión al computador',
+    'Abrir el archivo de plantilla en Canva / Photoshop / Illustrator',
+    'Para cada pieza: colocar la foto según referencia de la Guía de Materiales',
+    'Pegar el copy exacto desde esta guía — no redactar de nuevo',
+    'Aplicar tipografía DM Sans en los tamaños indicados por pieza',
+    'Verificar que el logo sea visible y el fondo no sature el texto',
+    'Exportar como PNG o JPG a 1080px en el lado menor',
+    'Nombrar archivos como: IG-Pieza1-NombreCliente.png, etc.',
+    'Subir piezas terminadas a la carpeta del cliente en Drive',
+    'Programar publicación según el Calendario del Mes',
+  ];
+
+  const checklistHtml = checklist.map((item, i) =>
+    `<div class="check-item"><span class="check-box"></span><span class="check-num">${i + 1}.</span>${escP(item)}</div>`
+  ).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía de Armado — ${escP(clientName)} · ${escP(mes)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@700&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',Helvetica,Arial,sans-serif;background:#0f2847;color:#e2e8f0;min-height:100vh;padding:32px 20px}
+  .page{max-width:900px;margin:0 auto}
+
+  .header{background:linear-gradient(135deg,#0d1f3c 0%,#0f2847 60%,#1a0d3d 100%);border:1px solid rgba(184,134,11,.3);border-radius:16px;padding:36px 40px;margin-bottom:32px}
+  .header-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:#b8860b;margin-bottom:8px}
+  .header-title{font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:#fff;margin-bottom:4px}
+  .header-sub{font-size:.9rem;color:#94a3b8;margin-top:8px}
+  .header-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .meta-chip{background:rgba(184,134,11,.15);border:1px solid rgba(184,134,11,.35);border-radius:20px;padding:5px 14px;font-size:.78rem;color:#fde68a}
+  .meta-chip strong{color:#fff;margin-right:4px}
+
+  .seccion-titulo{font-family:'Playfair Display',Georgia,serif;font-size:1.2rem;color:#b8860b;border-bottom:1px solid rgba(184,134,11,.3);padding-bottom:8px;margin:32px 0 16px}
+
+  .ficha{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+  .ficha-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .ficha-num-wrap{display:flex;align-items:center;gap:10px}
+  .ficha-num{font-weight:700;color:#fff;font-size:.95rem}
+  .ficha-red{font-size:.72rem;border:1px solid;border-radius:20px;padding:2px 10px;font-weight:600}
+  .ficha-canvas{font-size:.78rem;color:#64748b;font-family:monospace}
+
+  .ficha-tabla{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:14px}
+  .ficha-tabla tr{border-bottom:1px solid rgba(255,255,255,.06)}
+  .ficha-tabla tr:last-child{border-bottom:none}
+  .ft-label{color:#b8860b;font-weight:600;padding:7px 12px 7px 0;width:160px;vertical-align:top;white-space:nowrap}
+  .ficha-tabla td{padding:7px 4px;color:#cbd5e1;vertical-align:top}
+
+  .copy-block{background:rgba(13,110,99,.12);border:1px solid rgba(13,110,99,.35);border-radius:10px;padding:16px 18px;margin-top:4px}
+  .copy-label{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#5eead4;margin-bottom:8px;font-weight:700}
+  .copy-text{font-size:.92rem;color:#f1f5f9;line-height:1.7;white-space:pre-wrap;font-family:'DM Sans',sans-serif;user-select:all;cursor:text}
+
+  .checklist-wrap{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:24px 28px;margin-top:8px}
+  .check-item{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem;color:#cbd5e1}
+  .check-item:last-child{border-bottom:none}
+  .check-box{width:18px;height:18px;border:2px solid rgba(184,134,11,.5);border-radius:4px;flex-shrink:0;margin-top:1px}
+  .check-num{color:#b8860b;font-weight:700;flex-shrink:0;min-width:20px}
+
+  .print-btn{display:block;margin:32px auto 0;padding:12px 32px;background:#b8860b;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;letter-spacing:.03em}
+  .print-btn:hover{background:#d4a017}
+
+  .footer{text-align:center;font-size:.72rem;color:#475569;margin-top:40px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
+
+  @media print{
+    body{background:#fff;color:#1a1a1a;padding:0}
+    .header{background:#0f2847;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .copy-block{background:#f0fdf4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .print-btn{display:none}
+    .ficha{break-inside:avoid}
+    .check-item{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-eyebrow">SYNKRO · Diseño y Armado</div>
+    <div class="header-title">Guía de Armado — Tiempo 2</div>
+    <div class="header-sub">${escP(clientName)} &nbsp;·&nbsp; ${escP(mes)}</div>
+    <div class="header-meta">
+      ${giro ? `<span class="meta-chip"><strong>Giro:</strong>${escP(giro)}</span>` : ''}
+      <span class="meta-chip"><strong>Código campaña:</strong>${escP(currentCampaignCode)}</span>
+      <span class="meta-chip"><strong>Copy:</strong>Aprobado desde portal del cliente</span>
+    </div>
+  </div>
+
+  ${allFichas}
+
+  <div class="seccion-titulo">✅ Checklist de Producción</div>
+  <div class="checklist-wrap">${checklistHtml}</div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+
+  <div class="footer">Generado por Motor Synkro &nbsp;·&nbsp; ${escP(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }))}</div>
+</div>
+</body>
+</html>`;
+
+  triggerDownload(
+    new Blob([html], { type: 'text/html;charset=utf-8' }),
+    `guia-armado-${slug}-${slugify(mes)}.html`
   );
 }
 
