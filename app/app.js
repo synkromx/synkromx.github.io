@@ -2997,15 +2997,15 @@ function renderStatusSection() {
         ${expired ? `<button class="btn-extend-approval" data-code="${escHtml(sess.code)}">⏳ Extender 24h</button>` : ''}
         <button class="btn-delete-approval" data-code="${escHtml(sess.code)}">Eliminar</button>
       </div>
-      <div class="status-card-actions">
-        <div class="status-actions-group">
-          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📅 Calendario</button>
-          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📸 Guía de Materiales</button>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn-card-action btn-card-calendario" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📅 Calendario</button>
+          <button class="btn-card-action btn-card-materiales" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📸 Guía de Materiales</button>
         </div>
         ${status === 'complete' ? `
-        <div class="status-actions-group">
-          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">🎨 Guía de Armado</button>
-          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}" style="border:1px solid #b8860b;background:rgba(184,134,11,.1);color:#b8860b;">📄 Resumen Ejecutivo</button>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn-card-action btn-card-armado" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">🎨 Guía de Armado</button>
+          <button class="btn-card-action btn-card-resumen" data-code="${escHtml(sess.code)}" style="color:var(--gold-xl);font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:var(--rs);border:1px solid var(--border-g);background:none;cursor:pointer;transition:all .2s;">📄 Resumen Ejecutivo</button>
         </div>` : ''}
       </div>
     `;
