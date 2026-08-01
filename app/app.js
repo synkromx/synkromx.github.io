@@ -1030,8 +1030,11 @@ function buildCalendarioPrompt(client, month, maestro, posts, pkg) {
   const igCount = (posts?.instagram || []).length;
   const fbCount = (posts?.facebook  || []).length;
   const tkCount = (posts?.tiktok    || []).length;
+  const año     = new Date().getFullYear();
 
   return `Eres el planificador de contenido del Motor Synkro. Crea el CALENDARIO DE PUBLICACIÓN mensual óptimo para máximo alcance e interacción.
+
+AÑO ACTUAL: ${año}. El mes a planificar es ${month.mes} ${año}. Usa fechas reales y correctas del mes de ${month.mes} ${año} — no uses 2025 ni ningún otro año.
 
 ## BRIEF MAESTRO
 \`\`\`json
@@ -1056,22 +1059,22 @@ ${monthSection(month)}
 - Nunca publicar en las 3 redes el mismo día a la misma hora
 - Dejar al menos 1 día entre posts de la misma red
 
-Responde ÚNICAMENTE con JSON válido. Genera exactamente 4 objetos en "semanas":
+Responde ÚNICAMENTE con JSON válido. Genera exactamente 4 objetos en "semanas". Todas las fechas deben corresponder al mes de ${month.mes} ${año}:
 
 {
   "semanas": [
     {
       "semana": "Semana 1",
-      "rango": "Días 1-7",
+      "rango": "1-7 ${month.mes} ${año}",
       "publicaciones": [
-        { "dia": "Lunes", "fecha": "1", "hora": "19:00", "red": "instagram", "numero": 1, "descripcion": "Tema o gancho breve del post" },
-        { "dia": "Miércoles", "fecha": "3", "hora": "20:00", "red": "facebook", "numero": 1, "descripcion": "Tema o gancho breve del post" },
-        { "dia": "Viernes", "fecha": "5", "hora": "18:00", "red": "tiktok", "numero": 1, "descripcion": "Tema o gancho breve del post" }
+        { "dia": "Lunes", "fecha": "1 ${month.mes} ${año}", "hora": "19:00", "red": "instagram", "numero": 1, "descripcion": "Tema o gancho breve del post" },
+        { "dia": "Miércoles", "fecha": "3 ${month.mes} ${año}", "hora": "20:00", "red": "facebook", "numero": 1, "descripcion": "Tema o gancho breve del post" },
+        { "dia": "Viernes", "fecha": "5 ${month.mes} ${año}", "hora": "18:00", "red": "tiktok", "numero": 1, "descripcion": "Tema o gancho breve del post" }
       ]
     },
-    { "semana": "Semana 2", "rango": "Días 8-14", "publicaciones": [ ] },
-    { "semana": "Semana 3", "rango": "Días 15-21", "publicaciones": [ ] },
-    { "semana": "Semana 4", "rango": "Días 22-30", "publicaciones": [ ] }
+    { "semana": "Semana 2", "rango": "8-14 ${month.mes} ${año}", "publicaciones": [ ] },
+    { "semana": "Semana 3", "rango": "15-21 ${month.mes} ${año}", "publicaciones": [ ] },
+    { "semana": "Semana 4", "rango": "22-fin ${month.mes} ${año}", "publicaciones": [ ] }
   ],
   "mejoresHorarios": {
     "instagram": "Horario óptimo personalizado para este nicho + justificación breve",
@@ -1344,35 +1347,11 @@ function generateCampaignExports(data) {
           <span class="btn-export-sub">HTML · sistema de marca</span>
         </span>
       </button>
-      <button class="btn-export btn-export-mat" id="btnDlBriefMat">
-        <span class="btn-export-icon">📸</span>
-        <span class="btn-export-text">
-          <span class="btn-export-label">Brief Material</span>
-          <span class="btn-export-sub">HTML · auditoría y sesión de fotos</span>
-        </span>
-      </button>
-      <button class="btn-export btn-export-prompts" id="btnDlPrompts">
-        <span class="btn-export-icon">✨</span>
-        <span class="btn-export-text">
-          <span class="btn-export-label">Prompts IA</span>
-          <span class="btn-export-sub">HTML · Imagen 3 por post</span>
-        </span>
-      </button>
       <button class="btn-export btn-export-cal2" id="btnDlCalVisual">
         <span class="btn-export-icon">📅</span>
         <span class="btn-export-text">
           <span class="btn-export-label">Calendario Visual</span>
           <span class="btn-export-sub">HTML · semana por semana</span>
-        </span>
-      </button>
-    </div>
-    <p id="labelGrupo2" style="font-size:.75rem;color:var(--teal-xl);margin:0 0 8px;font-weight:700;display:none;">✅ Post-aprobación</p>
-    <div class="exports-btns" id="btnGrupo2" style="display:none;">
-      <button class="btn-export btn-export-prod" id="btnDlProduccion">
-        <span class="btn-export-icon">🗂️</span>
-        <span class="btn-export-text">
-          <span class="btn-export-label">Documento de Producción</span>
-          <span class="btn-export-sub">HTML · copy final aprobado</span>
         </span>
       </button>
       <button class="btn-export btn-export-resumen" id="btnDlResumen">
@@ -1394,21 +1373,8 @@ function generateCampaignExports(data) {
   const btnCal = wrapper.querySelector('#btnDlCal');
   if (btnCal) btnCal.addEventListener('click', () => downloadJson(data.calendarioPublicacion, 'calendario'));
   wrapper.querySelector('#btnDlADN').addEventListener('click', () => generarADNVisual(data));
-  wrapper.querySelector('#btnDlBriefMat').addEventListener('click', () => generarBriefMaterial(data));
-  wrapper.querySelector('#btnDlPrompts').addEventListener('click', () => generarPromptsIA(data));
   wrapper.querySelector('#btnDlCalVisual').addEventListener('click', () => generarCalendarioVisualHTML(data));
-  if (currentCampaignCode) {
-    db.ref('campaigns/' + currentCampaignCode + '/approvals').once('value').then(snap => {
-      const approvals = snap.val() || {};
-      const status = computeOverallStatus(approvals);
-      if (status === 'complete') {
-        wrapper.querySelector('#labelGrupo2').style.display = 'block';
-        wrapper.querySelector('#btnGrupo2').style.display = 'flex';
-        wrapper.querySelector('#btnDlProduccion').addEventListener('click', () => generarProduccionHTML(currentCampaignCode));
-        wrapper.querySelector('#btnDlResumen').addEventListener('click', () => generarResumenEjecutivoHTML(data));
-      }
-    });
-  }
+  wrapper.querySelector('#btnDlResumen').addEventListener('click', () => generarResumenEjecutivoHTML(data));
 }
 
 // ── Resumen ejecutivo HTML ─────────────────────────────────────────────────
@@ -1416,15 +1382,32 @@ function generateCampaignExports(data) {
 function downloadResumenHtml(data) {
   const m      = data.maestro            || {};
   const e      = data.estrategiaCampana  || {};
-  const month  = getMonthData();
   const pkg    = data._package           || 'starter';
 
+  // Mes: primero del JSON, fallback al formulario activo
+  const mesFromData = data._mes || data.mes || '';
+  const month = mesFromData
+    ? { mes: mesFromData, servicio: data.servicio || m.servicioEstrella || '', promocion: data.promocion || '' }
+    : getMonthData();
+
+  // Nombre: prioriza nombre_comercial del brief cargado, luego del JSON
   const clientName = (clientData && (
-    clientData.nombre
+    clientData.identidad?.nombre_comercial
+    || clientData.nombre
     || clientData.identidad?.nombre
     || clientData.negocio?.nombre
     || clientData.name
-  )) || 'Cliente';
+  )) || data.clientName || 'Cliente';
+
+  // Fallbacks para campañas antiguas sin estrategiaCampana
+  if (!e.anguloNarrativo && m.anguloCampana)     e.anguloNarrativo  = m.anguloCampana;
+  if (!e.mensajeClave    && m.mensajeClave)       e.mensajeClave     = m.mensajeClave;
+  if (!e.emocionPrincipal && m.emocionPrincipal)  e.emocionPrincipal = m.emocionPrincipal;
+  if (!e.tono            && m.tono)               e.tono             = m.tono;
+  if (!Array.isArray(e.pilaresDeContenido) && Array.isArray(m.pilaresDeContenido))
+    e.pilaresDeContenido = m.pilaresDeContenido;
+  if (!Array.isArray(e.enfoquesSemana) && Array.isArray(m.enfoquesSemana))
+    e.enfoquesSemana = m.enfoquesSemana;
 
   const hashtags = m.hashtags
     ? [...(m.hashtags.marca || []), ...(m.hashtags.nicho || []), ...(m.hashtags.trending || [])].join('  ')
@@ -1565,26 +1548,37 @@ function getClientNameSlug() {
 }
 
 async function generarADNVisual(data) {
-  const client  = clientData || {};
-  const id      = client.identidad || {};
+  const client   = clientData || {};
+  const id       = client.identidad || {};
   const clientNameDisplay = id.nombre_comercial || id.nombre || data.clientName || 'Cliente';
-  const marca   = client.marca     || {};
-  const negocio = client.negocio   || {};
-  const posts   = data.posts       || {};
+  const marca    = client.marca     || {};
+  const negocio  = client.negocio   || {};
+  const posts    = data.posts       || {};
+  const estrat   = data.estrategiaCampana || {};
+  const maestro  = data.maestro           || {};
+  const mes      = data._mes || data.mes || getMonthData().mes || '';
+  const slug     = data._clientSlug || slugify(clientNameDisplay);
   const igSample = (posts.instagram || []).slice(0, 6).map((p,i) =>
     `Post ${i+1}: ${p.caption || p.post || ''}`).join('\n');
 
-  const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${clientNameDisplay}".
+  const prompt = `Eres el director creativo de SYNKRO agencia digital. Genera un documento HTML completo y autocontenido (sin dependencias externas, sin CDN) que sea la Guía ADN Visual para el cliente "${clientNameDisplay}" correspondiente al mes de ${mes}.
 
 DATOS DEL CLIENTE:
 - Giro: ${id.giro || ''} — ${id.descripcion || ''}
-- Tono de marca: ${marca.tono || ''}
+- Tono de marca: ${marca.tono || maestro.tono || ''}
 - Color principal: ${marca.color_principal || ''}
 - Color secundario: ${marca.color_secundario || ''}
 - Referencias de marca: ${marca.referencias || ''}
-- Servicio estrella: ${negocio.servicio_estrella || ''}
-- Cliente ideal: ${negocio.cliente_ideal || ''}
-- Diferenciador: ${negocio.diferenciador || ''}
+- Servicio estrella: ${negocio.servicio_estrella || maestro.servicioEstrella || ''}
+- Cliente ideal: ${negocio.cliente_ideal || maestro.audiencia || ''}
+- Diferenciador: ${negocio.diferenciador || maestro.propuestaValor || ''}
+
+ESTRATEGIA DEL MES (${mes}):
+- Ángulo narrativo: ${estrat.anguloNarrativo || ''}
+- Mensaje clave: ${estrat.mensajeClave || ''}
+- Emoción principal: ${estrat.emocionPrincipal || ''}
+- Tono: ${estrat.tono || ''}
+- Pilares: ${(estrat.pilaresDeContenido || []).map(p => `${p.pilar} (${p.porcentaje}%)`).join(', ')}
 
 EJEMPLOS DE COPY APROBADO:
 ${igSample}
@@ -1607,7 +1601,7 @@ RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
 Genera SOLO el HTML completo sin explicaciones. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
-  if (html) downloadHTML(html, `ADN-Visual-${getClientNameSlug()}-${getMonthData().mes}.html`);
+  if (html) downloadHTML(html, `ADN-Visual-${slug}-${slugify(mes)}.html`);
 }
 
 async function generarBriefMaterial(data) {
@@ -1691,29 +1685,33 @@ Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
 }
 
 async function generarCalendarioVisualHTML(data) {
-  const client = clientData || {};
-  const id     = client.identidad || {};
-  const cal    = data.calendarioPublicacion;
+  const client  = clientData || {};
+  const id      = client.identidad || {};
+  const clientNameDisplay = id.nombre_comercial || id.nombre || data.clientName || 'Cliente';
+  const mes     = data._mes || data.mes || getMonthData().mes || '';
+  const slug    = data._clientSlug || slugify(clientNameDisplay);
+  const cal     = data.calendarioPublicacion;
   if (!cal) { showToast('No hay datos de calendario en esta campaña', 'error'); return; }
 
-  const prompt = `Eres el director de operaciones de SYNKRO. Genera un documento HTML completo y autocontenido (sin dependencias externas) con el Calendario Visual para el cliente "${id.nombre_comercial || 'Cliente'}".
+  const totalPosts = (cal.semanas || []).reduce((acc, s) => acc + (s.publicaciones || []).length, 0);
+  const calJson    = JSON.stringify(cal, null, 2).substring(0, 4000);
+
+  const prompt = `Eres el director de operaciones de SYNKRO. Genera un documento HTML completo y autocontenido (sin dependencias externas) con el Calendario Visual para el cliente "${clientNameDisplay}", mes de ${mes}.
+
+RESUMEN: ${totalPosts} publicaciones totales distribuidas en ${(cal.semanas || []).length} semanas.
 
 DATOS DEL CALENDARIO (JSON):
-${JSON.stringify(cal, null, 2).substring(0, 3000)}
+${calJson}
 
-ESTRUCTURA: header con cliente/mes/total posts, posts por semana como tarjetas (día, fecha, horario, badge de red con colores: IG morado, FB azul, TK rojo/negro, descripción, badge de promo si aplica), semana con más posts marcada como Semana Clave, leyenda de promos, notas estratégicas al final, botón imprimir.
+ESTRUCTURA: header con nombre del cliente "${clientNameDisplay}", mes "${mes}" y total de posts, posts por semana como tarjetas (día, fecha, horario, badge de red con colores: IG #e1306c, FB #1877f2, TK #ff0050, descripción, badge de promo si aplica), semana con más posts marcada como Semana Clave, mejores horarios por red al final, notas estratégicas, botón imprimir.
 
-DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, hover en tarjetas, responsivo.
-RESTRICCIÓN CRÍTICA DE COMPATIBILIDAD:
-- Los tabs/pestañas DEBEN funcionar con CSS puro usando input[type=radio] ocultos y labels — SIN JavaScript para navegación entre tabs
-- Todo el JavaScript debe ser inline en atributos onclick cuando sea necesario (botones copiar)
-- El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor
-- No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos
+DISEÑO: fondo #0f2847, teal #0d6e63, dorado #b8860b, fuente system-ui, hover en tarjetas, responsivo, sin tabs (es una sola página).
+RESTRICCIÓN CRÍTICA: El HTML debe funcionar correctamente al abrirse desde disco local (file://) sin servidor. No uses addEventListener ni DOMContentLoaded — usa onclick="..." directamente en los elementos.
 
 Genera SOLO el HTML completo. Empieza con <!DOCTYPE html>`;
 
   const html = await callClaudeForHTML(prompt);
-  if (html) downloadHTML(html, `Calendario-Visual-${getClientNameSlug()}-${getMonthData().mes}.html`);
+  if (html) downloadHTML(html, `Calendario-Visual-${slug}-${slugify(mes)}.html`);
 }
 
 async function generarProduccionHTML(codeOverride) {
@@ -2851,25 +2849,47 @@ function renderStatusSection() {
     });
 
     // Botones de acción de tarjeta (Entregables con IA)
+    async function loadCampaignWithBrief(code) {
+      const snap = await db.ref('campaigns/' + code).once('value');
+      const d = snap.val(); if (!d) return null;
+      const slug = d._clientSlug || slugify(d.clientName || '');
+      if (slug) {
+        try {
+          const briefSnap = await db.ref('clientes/' + slug + '/brief').once('value');
+          if (briefSnap.exists()) {
+            const prev = clientData;
+            clientData = briefSnap.val();
+            d._briefLoaded = true;
+            d._prevClientData = prev;
+          }
+        } catch (_) {}
+      }
+      return d;
+    }
+
     card.querySelector('.btn-card-adn')?.addEventListener('click', async function() {
-      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
-      const d = snap.val(); if (!d) return;
-      generarADNVisual(d);
+      const d = await loadCampaignWithBrief(this.dataset.code);
+      if (!d) return;
+      await generarADNVisual(d);
+      if (d._briefLoaded) clientData = d._prevClientData;
     });
     card.querySelector('.btn-card-briefmat')?.addEventListener('click', async function() {
-      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
-      const d = snap.val(); if (!d) return;
-      generarBriefMaterial(d);
+      const d = await loadCampaignWithBrief(this.dataset.code);
+      if (!d) return;
+      await generarBriefMaterial(d);
+      if (d._briefLoaded) clientData = d._prevClientData;
     });
     card.querySelector('.btn-card-promptsia')?.addEventListener('click', async function() {
-      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
-      const d = snap.val(); if (!d) return;
-      generarPromptsIA(d);
+      const d = await loadCampaignWithBrief(this.dataset.code);
+      if (!d) return;
+      await generarPromptsIA(d);
+      if (d._briefLoaded) clientData = d._prevClientData;
     });
     card.querySelector('.btn-card-calvisual')?.addEventListener('click', async function() {
-      const snap = await db.ref('campaigns/' + this.dataset.code).once('value');
-      const d = snap.val(); if (!d) return;
-      generarCalendarioVisualHTML(d);
+      const d = await loadCampaignWithBrief(this.dataset.code);
+      if (!d) return;
+      await generarCalendarioVisualHTML(d);
+      if (d._briefLoaded) clientData = d._prevClientData;
     });
     card.querySelector('.btn-card-produccion')?.addEventListener('click', function() {
       generarProduccionHTML(this.dataset.code);
